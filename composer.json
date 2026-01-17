@@ -1,5 +1,5 @@
 {
-  "name": "edv/env-pipeline-spec-php",
+  "name": "blaumohn/env-pipeline-spec-php",
   "description": "Pipeline/phase based env manifest with Dotenv loading and policy validation.",
   "type": "library",
   "version": "0.1.0",
