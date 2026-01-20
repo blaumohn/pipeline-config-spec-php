@@ -1,6 +1,6 @@
 <?php
 
-namespace EnvPipelineSpec\Env;
+namespace ConfigPipelineSpec\Config;
 
 use Symfony\Component\Filesystem\Path;
 use Symfony\Component\Yaml\Yaml;

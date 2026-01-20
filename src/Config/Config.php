@@ -1,14 +1,16 @@
 <?php
 
-namespace EnvPipelineSpec\Env;
+namespace ConfigPipelineSpec\Config;
 
-final class Env
+final class Config
 {
     private string $rootPath;
+    private array $values;
 
-    public function __construct(string $rootPath)
+    public function __construct(string $rootPath, array $values = [])
     {
         $this->rootPath = rtrim($rootPath, DIRECTORY_SEPARATOR);
+        $this->values = $values;
     }
 
     public function rootPath(): string
@@ -18,9 +20,8 @@ final class Env
 
     public function get(string $key, mixed $default = null): mixed
     {
-        $envValue = getenv($key);
-        if ($envValue !== false) {
-            return $envValue;
+        if (array_key_exists($key, $this->values)) {
+            return $this->values[$key];
         }
 
         return $default;

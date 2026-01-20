@@ -1,10 +1,10 @@
 <?php
 
-namespace EnvPipelineSpec\Env;
+namespace ConfigPipelineSpec\Config;
 
-final class EnvPolicy
+final class ConfigPolicy
 {
-    public function validate(Manifest $manifest, Context $context, EnvSnapshot $snapshot): array
+    public function validate(Manifest $manifest, Context $context, ConfigSnapshot $snapshot): array
     {
         $errors = [];
         $phaseConfig = $manifest->resolvePhaseConfig($context);
@@ -38,7 +38,7 @@ final class EnvPolicy
         return $errors;
     }
 
-    private function validateRequiredPresence(array $required, EnvSnapshot $snapshot): array
+    private function validateRequiredPresence(array $required, ConfigSnapshot $snapshot): array
     {
         $errors = [];
         foreach ($required as $key) {
@@ -49,7 +49,7 @@ final class EnvPolicy
         return $errors;
     }
 
-    private function validateUnexpected(array $allowed, EnvSnapshot $snapshot): array
+    private function validateUnexpected(array $allowed, ConfigSnapshot $snapshot): array
     {
         $errors = [];
         foreach ($snapshot->values() as $key => $_value) {
@@ -60,7 +60,7 @@ final class EnvPolicy
         return $errors;
     }
 
-    private function validateSources(Manifest $manifest, EnvSnapshot $snapshot): array
+    private function validateSources(Manifest $manifest, ConfigSnapshot $snapshot): array
     {
         $errors = [];
         $sources = $snapshot->sources();

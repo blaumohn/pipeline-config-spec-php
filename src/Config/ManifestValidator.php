@@ -1,6 +1,6 @@
 <?php
 
-namespace EnvPipelineSpec\Env;
+namespace ConfigPipelineSpec\Config;
 
 use Symfony\Component\Config\Definition\Builder\TreeBuilder;
 use Symfony\Component\Config\Definition\Processor;

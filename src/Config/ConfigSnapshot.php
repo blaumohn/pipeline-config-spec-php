@@ -1,8 +1,8 @@
 <?php
 
-namespace EnvPipelineSpec\Env;
+namespace ConfigPipelineSpec\Config;
 
-final class EnvSnapshot
+final class ConfigSnapshot
 {
     private array $values;
     private array $sources;

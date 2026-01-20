@@ -1,6 +1,6 @@
 <?php
 
-namespace EnvPipelineSpec\Env;
+namespace ConfigPipelineSpec\Config;
 
 final class ContextResolver
 {
@@ -24,10 +24,6 @@ final class ContextResolver
     {
         if ($override !== null && trim($override) !== '') {
             return trim($override);
-        }
-        $envValue = getenv($envKey);
-        if ($envValue !== false && trim((string) $envValue) !== '') {
-            return trim((string) $envValue);
         }
         return $fallback !== null ? trim((string) $fallback) : null;
     }

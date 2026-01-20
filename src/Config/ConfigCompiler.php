@@ -1,33 +1,31 @@
 <?php
 
-namespace EnvPipelineSpec\Env;
+namespace ConfigPipelineSpec\Config;
 
 use Symfony\Component\Filesystem\Path;
 
-final class EnvCompiler
+final class ConfigCompiler
 {
     private string $rootPath;
     private ContextResolver $contextResolver;
-    private DotenvLoader $dotenv;
+    private ConfigLoader $dotenv;
     private Manifest $manifest;
     private ManifestValidator $manifestValidator;
-    private EnvPolicy $policy;
-    private EnvInitializer $initializer;
+    private ConfigPolicy $policy;
 
     public function __construct(string $rootPath)
     {
         $this->rootPath = rtrim($rootPath, DIRECTORY_SEPARATOR);
         $this->contextResolver = new ContextResolver();
-        $this->dotenv = new DotenvLoader($this->rootPath);
+        $this->dotenv = new ConfigLoader($this->rootPath);
         $this->manifest = new Manifest($this->rootPath);
         $this->manifestValidator = new ManifestValidator();
-        $this->policy = new EnvPolicy();
-        $this->initializer = new EnvInitializer($this->rootPath);
+        $this->policy = new ConfigPolicy();
     }
 
-    public function compile(Context $context, bool $interactive, ?string $targetPath = null): string
+    public function compile(Context $context, bool $interactive, ?string $targetPath = null, array $overrides = []): string
     {
-        $snapshot = $this->validate($context, $interactive);
+        $snapshot = $this->resolve($context, $overrides);
 
         $values = $this->filterAllowed($context, $snapshot->values());
 
@@ -37,30 +35,35 @@ final class EnvCompiler
         return $targetPath;
     }
 
-    public function validate(Context $context, bool $interactive): EnvSnapshot
+
+    public function resolve(Context $context, array $overrides = []): ConfigSnapshot
     {
-        $this->initializer->ensureLocalEnv($interactive);
         $this->manifestValidator->validate($this->manifest->data());
 
-        $overrides = [
+        $base = [
             'PIPELINE' => $context->pipeline(),
             'PHASE' => $context->phase(),
         ];
         if ($context->profile() !== null) {
-            $overrides['PROFILE'] = $context->profile();
+            $base['PROFILE'] = $context->profile();
         }
 
-        $snapshot = $this->dotenv->load($context, $overrides);
+        $snapshot = $this->dotenv->load($context, array_merge($base, $overrides));
         $snapshot = $this->filterSnapshot($context, $snapshot);
         $errors = $this->policy->validate($this->manifest, $context, $snapshot);
         if ($errors !== []) {
-            throw new \RuntimeException("Env-Validierung fehlgeschlagen:\n- " . implode("\n- ", $errors));
+            throw new \RuntimeException("Config-Validierung fehlgeschlagen:\n- " . implode("\n- ", $errors));
         }
 
         return $snapshot;
     }
 
-    private function filterSnapshot(Context $context, EnvSnapshot $snapshot): EnvSnapshot
+    public function validate(Context $context, bool $interactive, array $overrides = []): ConfigSnapshot
+    {
+        return $this->resolve($context, $overrides);
+    }
+
+    private function filterSnapshot(Context $context, ConfigSnapshot $snapshot): ConfigSnapshot
     {
         $phaseConfig = $this->manifest->resolvePhaseConfig($context);
         if ($phaseConfig === null) {
@@ -82,7 +85,7 @@ final class EnvCompiler
             }
         }
 
-        return new EnvSnapshot($values, $sources, $snapshot->loadedFiles());
+        return new ConfigSnapshot($values, $sources, $snapshot->loadedFiles());
     }
 
     private function shouldKeep(string $key, string $source, array $allowed): bool

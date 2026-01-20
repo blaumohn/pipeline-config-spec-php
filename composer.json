@@ -1,6 +1,6 @@
 {
-  "name": "blaumohn/env-pipeline-spec-php",
-  "description": "Pipeline/phase based env manifest with Dotenv loading and policy validation.",
+  "name": "blaumohn/config-pipeline-spec-php",
+  "description": "Pipeline/phase based config manifest with Dotenv loading and policy validation.",
   "type": "library",
   "version": "0.1.0",
   "require": {
@@ -12,12 +12,12 @@
   },
   "autoload": {
     "psr-4": {
-      "EnvPipelineSpec\\": "src/"
+      "ConfigPipelineSpec\\": "src/"
     }
   },
   "autoload-dev": {
     "psr-4": {
-      "EnvPipelineSpec\\Tests\\": "tests/"
+      "ConfigPipelineSpec\\Tests\\": "tests/"
     }
   },
   "require-dev": {

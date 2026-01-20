@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace EnvPipelineSpec\Tests;
+namespace ConfigPipelineSpec\Tests;
 
-use EnvPipelineSpec\Env\Context;
-use EnvPipelineSpec\Env\Manifest;
+use ConfigPipelineSpec\Config\Context;
+use ConfigPipelineSpec\Config\Manifest;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\Yaml\Yaml;
 

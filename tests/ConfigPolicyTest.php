@@ -2,16 +2,16 @@
 
 declare(strict_types=1);
 
-namespace EnvPipelineSpec\Tests;
+namespace ConfigPipelineSpec\Tests;
 
-use EnvPipelineSpec\Env\Context;
-use EnvPipelineSpec\Env\EnvPolicy;
-use EnvPipelineSpec\Env\EnvSnapshot;
-use EnvPipelineSpec\Env\Manifest;
+use ConfigPipelineSpec\Config\Context;
+use ConfigPipelineSpec\Config\ConfigPolicy;
+use ConfigPipelineSpec\Config\ConfigSnapshot;
+use ConfigPipelineSpec\Config\Manifest;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\Yaml\Yaml;
 
-final class EnvPolicyTest extends TestCase
+final class ConfigPolicyTest extends TestCase
 {
     public function testRejectsDisallowedSource(): void
     {
@@ -36,9 +36,9 @@ final class EnvPolicyTest extends TestCase
         ]);
 
         $manifest = new Manifest($root);
-        $policy = new EnvPolicy();
+        $policy = new ConfigPolicy();
         $context = new Context('dev', 'runtime', null);
-        $snapshot = new EnvSnapshot([
+        $snapshot = new ConfigSnapshot([
             'PIPELINE' => 'dev',
             'PHASE' => 'runtime',
             'IP_SALT' => 'secret',
@@ -76,9 +76,9 @@ final class EnvPolicyTest extends TestCase
         ]);
 
         $manifest = new Manifest($root);
-        $policy = new EnvPolicy();
+        $policy = new ConfigPolicy();
         $context = new Context('dev', 'runtime', null);
-        $snapshot = new EnvSnapshot([
+        $snapshot = new ConfigSnapshot([
             'PIPELINE' => 'dev',
             'PHASE' => 'runtime',
             'IP_SALT' => 'secret',
