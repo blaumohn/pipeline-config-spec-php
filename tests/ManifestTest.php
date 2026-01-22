@@ -23,7 +23,7 @@ final class ManifestTest extends TestCase
                 ],
                 'dev' => [
                     'build' => [
-                        'required' => ['PROFILE'],
+                        'required' => [],
                         'allowed' => ['APP_URL'],
                     ],
                 ],
@@ -32,7 +32,6 @@ final class ManifestTest extends TestCase
                 'context' => [
                     'PIPELINE' => [],
                     'PHASE' => [],
-                    'PROFILE' => [],
                 ],
                 'captcha' => [
                     'CAPTCHA_MAX_GET' => [],
@@ -41,14 +40,14 @@ final class ManifestTest extends TestCase
         ]);
 
         $manifest = new Manifest($root);
-        $context = new Context('dev', 'build', 'dev');
+        $context = new Context('dev', 'build');
         $phase = $manifest->resolvePhaseConfig($context);
 
         self::assertNotNull($phase);
         $required = $manifest->expandRequired($phase['required'] ?? []);
         $allowed = $manifest->expandAllowed($phase['allowed'] ?? []);
 
-        self::assertSame(['PIPELINE', 'PHASE', 'PROFILE'], $required);
+        self::assertSame(['PIPELINE', 'PHASE'], $required);
         self::assertContains('CAPTCHA_MAX_GET', $allowed);
         self::assertContains('APP_URL', $allowed);
     }
@@ -72,7 +71,7 @@ final class ManifestTest extends TestCase
         ]);
 
         $manifest = new Manifest($root);
-        $context = new Context('dev', 'runtime', null);
+        $context = new Context('dev', 'runtime');
         $phase = $manifest->resolvePhaseConfig($context);
 
         self::assertNotNull($phase);

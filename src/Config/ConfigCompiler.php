@@ -44,9 +44,6 @@ final class ConfigCompiler
             'PIPELINE' => $context->pipeline(),
             'PHASE' => $context->phase(),
         ];
-        if ($context->profile() !== null) {
-            $base['PROFILE'] = $context->profile();
-        }
 
         $snapshot = $this->dotenv->load($context, array_merge($base, $overrides));
         $snapshot = $this->filterSnapshot($context, $snapshot);

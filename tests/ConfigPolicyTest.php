@@ -37,7 +37,7 @@ final class ConfigPolicyTest extends TestCase
 
         $manifest = new Manifest($root);
         $policy = new ConfigPolicy();
-        $context = new Context('dev', 'runtime', null);
+        $context = new Context('dev', 'runtime');
         $snapshot = new ConfigSnapshot([
             'PIPELINE' => 'dev',
             'PHASE' => 'runtime',
@@ -77,7 +77,7 @@ final class ConfigPolicyTest extends TestCase
 
         $manifest = new Manifest($root);
         $policy = new ConfigPolicy();
-        $context = new Context('dev', 'runtime', null);
+        $context = new Context('dev', 'runtime');
         $snapshot = new ConfigSnapshot([
             'PIPELINE' => 'dev',
             'PHASE' => 'runtime',

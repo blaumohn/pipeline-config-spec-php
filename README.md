@@ -7,7 +7,6 @@ It includes a Dotenv loader, manifest validation, and runtime policy checks.
 
 - **Pipeline**: project flow (e.g. `dev`, `smoketest`, `delivery`)
 - **Phase**: lifecycle step (e.g. `setup`, `build`, `runtime`, `deploy`)
-- **Profile**: optional variant (e.g. `dev`, `preview`, `prod`)
 
 ## Dotenv file order
 
@@ -17,10 +16,6 @@ It includes a Dotenv loader, manifest validation, and runtime policy checks.
 4) `.env.<PIPELINE>.local`
 5) `.env.<PIPELINE>.<PHASE>`
 6) `.env.<PIPELINE>.<PHASE>.local`
-7) `.env.<PIPELINE>.<PROFILE>` (optional)
-8) `.env.<PIPELINE>.<PROFILE>.local` (optional)
-9) `.env.<PIPELINE>.<PROFILE>.<PHASE>` (optional)
-10) `.env.<PIPELINE>.<PROFILE>.<PHASE>.local` (optional)
 
 ## Manifest format
 
@@ -42,7 +37,7 @@ pipelines:
       allowed: [app, secrets]
   dev:
     runtime:
-      required: [PROFILE]
+      required: []
       allowed: []
 ```
 
@@ -52,7 +47,7 @@ pipelines:
 
 ## API (language-agnostic)
 
-- **Context**: `pipeline`, `phase`, `profile`
+- **Context**: `pipeline`, `phase`
 - **Dotenv loader**: loads context-scoped config files
 - **Manifest**: parses and expands groups/wildcards
 - **Policy**: validates allowed/required and source rules
@@ -67,7 +62,6 @@ $compiler = new ConfigCompiler($rootPath);
 $context = $compiler->resolveContext([
     'pipeline' => 'dev',
     'phase' => 'runtime',
-    'profile' => 'dev',
 ]);
 $compiler->compile($context, false);
 ```

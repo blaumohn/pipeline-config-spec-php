@@ -55,7 +55,6 @@ final class ConfigLoader
         $values = [
             'pipeline' => $context->pipeline(),
             'phase' => $context->phase(),
-            'profile' => $context->profile() ?? '',
         ];
         $files = [];
         foreach ($this->patterns() as $pattern) {
@@ -77,18 +76,11 @@ final class ConfigLoader
             '.env.{pipeline}.local',
             '.env.{pipeline}.{phase}',
             '.env.{pipeline}.{phase}.local',
-            '.env.{pipeline}.{profile}',
-            '.env.{pipeline}.{profile}.local',
-            '.env.{pipeline}.{profile}.{phase}',
-            '.env.{pipeline}.{profile}.{phase}.local',
         ];
     }
 
     private function expandPattern(string $pattern, array $values): ?string
     {
-        if (str_contains($pattern, '{profile}') && $values['profile'] === '') {
-            return null;
-        }
         $replaced = $pattern;
         foreach ($values as $key => $value) {
             $replaced = str_replace('{' . $key . '}', $value, $replaced);
