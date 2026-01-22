@@ -6,13 +6,11 @@ final class Context
 {
     private string $pipeline;
     private string $phase;
-    private ?string $profile;
 
-    public function __construct(string $pipeline, string $phase, ?string $profile)
+    public function __construct(string $pipeline, string $phase)
     {
         $this->pipeline = $pipeline;
         $this->phase = $phase;
-        $this->profile = $profile !== '' ? $profile : null;
     }
 
     public function pipeline(): string
@@ -23,10 +21,5 @@ final class Context
     public function phase(): string
     {
         return $this->phase;
-    }
-
-    public function profile(): ?string
-    {
-        return $this->profile;
     }
 }
