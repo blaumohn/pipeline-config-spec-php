@@ -8,7 +8,7 @@ final class ConfigCompiler
 {
     private string $rootPath;
     private ContextResolver $contextResolver;
-    private ConfigLoader $dotenv;
+    private ConfigLoader $loader;
     private Manifest $manifest;
     private ManifestValidator $manifestValidator;
     private ConfigPolicy $policy;
@@ -17,7 +17,7 @@ final class ConfigCompiler
     {
         $this->rootPath = rtrim($rootPath, DIRECTORY_SEPARATOR);
         $this->contextResolver = new ContextResolver();
-        $this->dotenv = new ConfigLoader($this->rootPath);
+        $this->loader = new ConfigLoader($this->rootPath);
         $this->manifest = new Manifest($this->rootPath);
         $this->manifestValidator = new ManifestValidator();
         $this->policy = new ConfigPolicy();
@@ -45,7 +45,7 @@ final class ConfigCompiler
             'PHASE' => $context->phase(),
         ];
 
-        $snapshot = $this->dotenv->load($context, array_merge($base, $overrides));
+        $snapshot = $this->loader->load($context, array_merge($base, $overrides));
         $snapshot = $this->filterSnapshot($context, $snapshot);
         $errors = $this->policy->validate($this->manifest, $context, $snapshot);
         if ($errors !== []) {

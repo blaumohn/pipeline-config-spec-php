@@ -2,18 +2,16 @@
 
 namespace ConfigPipelineSpec\Config;
 
-use Symfony\Component\Dotenv\Dotenv;
 use Symfony\Component\Filesystem\Path;
+use Symfony\Component\Yaml\Yaml;
 
 final class ConfigLoader
 {
     private string $rootPath;
-    private Dotenv $dotenv;
 
     public function __construct(string $rootPath)
     {
         $this->rootPath = rtrim($rootPath, DIRECTORY_SEPARATOR);
-        $this->dotenv = new Dotenv();
     }
 
     public function load(Context $context, array $overrides = []): ConfigSnapshot
@@ -22,16 +20,16 @@ final class ConfigLoader
         $sources = [];
         $loadedFiles = [];
 
-        foreach ($this->dotenvFiles($context) as $file) {
+        foreach ($this->configFiles($context) as $file) {
             if (!is_file($file)) {
                 continue;
             }
-            $content = file_get_contents($file);
-            if ($content === false) {
-                continue;
-            }
-            $parsed = $this->dotenv->parse($content, $file);
-            foreach ($parsed as $key => $value) {
+            $parsed = Yaml::parseFile($file);
+            $data = $this->assertMapping($parsed, $file);
+            foreach ($data as $key => $value) {
+                if (!is_string($key)) {
+                    continue;
+                }
                 $values[$key] = $value;
                 $sources[$key] = $file;
             }
@@ -50,7 +48,7 @@ final class ConfigLoader
         return new ConfigSnapshot($values, $sources, $loadedFiles);
     }
 
-    private function dotenvFiles(Context $context): array
+    private function configFiles(Context $context): array
     {
         $values = [
             'pipeline' => $context->pipeline(),
@@ -59,9 +57,6 @@ final class ConfigLoader
         $files = [];
         foreach ($this->patterns() as $pattern) {
             $file = $this->expandPattern($pattern, $values);
-            if ($file === null) {
-                continue;
-            }
             $files[] = Path::join($this->rootPath, $file);
         }
         return $files;
@@ -70,12 +65,11 @@ final class ConfigLoader
     private function patterns(): array
     {
         return [
-            '.env',
-            '.env.local',
-            '.env.{pipeline}',
-            '.env.{pipeline}.local',
-            '.env.{pipeline}.{phase}',
-            '.env.{pipeline}.{phase}.local',
+            'config/common.yaml',
+            'config/{pipeline}.yaml',
+            '.local/{pipeline}.yaml',
+            'config/{pipeline}-{phase}.yaml',
+            '.local/{pipeline}-{phase}.yaml',
         ];
     }
 
@@ -86,6 +80,17 @@ final class ConfigLoader
             $replaced = str_replace('{' . $key . '}', $value, $replaced);
         }
         return $replaced;
+    }
+
+    private function assertMapping(mixed $data, string $file): array
+    {
+        if ($data === null) {
+            return [];
+        }
+        if (!is_array($data)) {
+            throw new \RuntimeException("Config-Datei ungueltig: {$file}");
+        }
+        return $data;
     }
 
 }

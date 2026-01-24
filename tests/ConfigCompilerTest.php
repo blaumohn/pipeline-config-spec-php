@@ -15,7 +15,7 @@ final class ConfigCompilerTest extends TestCase
     {
         $root = $this->createRoot();
         $this->writeManifest($root, $this->manifestData());
-        $this->seedEnvFiles($root);
+        $this->seedYamlFiles($root);
         $values = $this->compileValues($root);
 
         self::assertSame('dev', $values['PIPELINE'] ?? null);
@@ -30,8 +30,8 @@ final class ConfigCompilerTest extends TestCase
 
         $root = $this->createRoot();
         $this->writeManifest($root, $this->manifestData());
-        $this->seedEnvFiles($root);
-        $this->writeEnv($root, '.env', "EXTRA=ignore\n");
+        $this->seedYamlFiles($root);
+        $this->writeYaml($root, 'config/common.yaml', "EXTRA: ignore\n");
 
         $compiler = new ConfigCompiler($root);
         $context = new Context('dev', 'runtime');
@@ -59,11 +59,15 @@ final class ConfigCompilerTest extends TestCase
         }
     }
 
-    private function writeEnv(string $root, string $file, string $content): void
+    private function writeYaml(string $root, string $file, string $content): void
     {
         $path = $root . '/' . $file;
+        $dir = dirname($path);
+        if (!is_dir($dir)) {
+            mkdir($dir, 0775, true);
+        }
         if (file_put_contents($path, $content) === false) {
-            throw new \RuntimeException('Failed to write env file.');
+            throw new \RuntimeException('Failed to write yaml file.');
         }
     }
 
@@ -90,9 +94,9 @@ final class ConfigCompilerTest extends TestCase
         ];
     }
 
-    private function seedEnvFiles(string $root): void
+    private function seedYamlFiles(string $root): void
     {
-        $this->writeEnv($root, '.env.dev.runtime', "APP_URL=https://example.test\n");
+        $this->writeYaml($root, 'config/dev-runtime.yaml', "APP_URL: https://example.test\n");
     }
 
     private function compileValues(string $root): array

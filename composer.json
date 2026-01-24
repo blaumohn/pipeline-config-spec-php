@@ -1,12 +1,11 @@
 {
   "name": "blaumohn/config-pipeline-spec-php",
-  "description": "Pipeline/phase based config manifest with Dotenv loading and policy validation.",
+  "description": "Pipeline/phase based config manifest with YAML loading and policy validation.",
   "type": "library",
   "version": "0.1.0",
   "require": {
     "php": ">=8.1",
     "symfony/config": "^7.0",
-    "symfony/dotenv": "^7.0",
     "symfony/filesystem": "^7.0",
     "symfony/yaml": "^7.0"
   },

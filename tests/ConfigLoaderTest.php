@@ -10,10 +10,10 @@ use PHPUnit\Framework\TestCase;
 
 final class ConfigLoaderTest extends TestCase
 {
-    public function testLoadsDotenvFilesInOrderWithoutProfile(): void
+    public function testLoadsYamlFilesInOrder(): void
     {
         $root = $this->createRoot();
-        $this->seedEnvFiles($root);
+        $this->seedYamlFiles($root);
 
         $loader = new ConfigLoader($root);
         $snapshot = $loader->load(new Context('dev', 'runtime'));
@@ -21,15 +21,14 @@ final class ConfigLoaderTest extends TestCase
         self::assertSame('runtime_local', $snapshot->values()['KEY'] ?? null);
         $files = $snapshot->loadedFiles();
         self::assertSame([
-            $root . '/.env',
-            $root . '/.env.local',
-            $root . '/.env.dev',
-            $root . '/.env.dev.local',
-            $root . '/.env.dev.runtime',
-            $root . '/.env.dev.runtime.local',
+            $root . '/config/common.yaml',
+            $root . '/config/dev.yaml',
+            $root . '/.local/dev.yaml',
+            $root . '/config/dev-runtime.yaml',
+            $root . '/.local/dev-runtime.yaml',
         ], $files);
-        self::assertNotContains($root . '/.env.dev.preview', $files);
-        self::assertNotContains($root . '/.env.dev.preview.runtime', $files);
+        self::assertNotContains($root . '/config/dev-preview.yaml', $files);
+        self::assertNotContains($root . '/.local/dev-preview.yaml', $files);
     }
 
     private function createRoot(): string
@@ -41,28 +40,31 @@ final class ConfigLoaderTest extends TestCase
         return $root;
     }
 
-    private function writeEnv(string $root, string $file, string $content): void
+    private function writeYaml(string $root, string $file, string $content): void
     {
         $path = $root . '/' . $file;
+        $dir = dirname($path);
+        if (!is_dir($dir)) {
+            mkdir($dir, 0775, true);
+        }
         if (file_put_contents($path, $content) === false) {
-            throw new \RuntimeException('Failed to write env file.');
+            throw new \RuntimeException('Failed to write yaml file.');
         }
     }
 
-    private function seedEnvFiles(string $root): void
+    private function seedYamlFiles(string $root): void
     {
         $files = [
-            '.env' => "KEY=base\n",
-            '.env.local' => "KEY=local\n",
-            '.env.dev' => "KEY=dev\n",
-            '.env.dev.local' => "KEY=dev_local\n",
-            '.env.dev.runtime' => "KEY=runtime\n",
-            '.env.dev.runtime.local' => "KEY=runtime_local\n",
-            '.env.dev.preview' => "KEY=profile\n",
-            '.env.dev.preview.runtime' => "KEY=profile_runtime\n",
+            'config/common.yaml' => "KEY: base\n",
+            'config/dev.yaml' => "KEY: dev\n",
+            '.local/dev.yaml' => "KEY: dev_local\n",
+            'config/dev-runtime.yaml' => "KEY: runtime\n",
+            '.local/dev-runtime.yaml' => "KEY: runtime_local\n",
+            'config/dev-preview.yaml' => "KEY: preview\n",
+            '.local/dev-preview.yaml' => "KEY: preview_local\n",
         ];
         foreach ($files as $file => $content) {
-            $this->writeEnv($root, $file, $content);
+            $this->writeYaml($root, $file, $content);
         }
     }
 }

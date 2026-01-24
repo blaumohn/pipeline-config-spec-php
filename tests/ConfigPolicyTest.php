@@ -45,7 +45,7 @@ final class ConfigPolicyTest extends TestCase
         ], [
             'PIPELINE' => 'system',
             'PHASE' => 'system',
-            'IP_SALT' => '/tmp/.env',
+            'IP_SALT' => '/tmp/config/dev-runtime.yaml',
         ], []);
 
         $errors = $policy->validate($manifest, $context, $snapshot);
@@ -85,7 +85,7 @@ final class ConfigPolicyTest extends TestCase
         ], [
             'PIPELINE' => 'system',
             'PHASE' => 'system',
-            'IP_SALT' => '/tmp/.env.local',
+            'IP_SALT' => '/tmp/.local/dev-runtime.yaml',
         ], []);
 
         $errors = $policy->validate($manifest, $context, $snapshot);

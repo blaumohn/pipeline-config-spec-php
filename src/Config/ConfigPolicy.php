@@ -88,13 +88,22 @@ final class ConfigPolicy
         if ($source === 'system' || $source === 'cli') {
             return $source;
         }
-        if ($source !== '' && str_ends_with($source, '.local')) {
+        if ($this->isLocalPath($source)) {
             return 'local';
         }
         if ($source !== '') {
             return 'file';
         }
         return 'unknown';
+    }
+
+    private function isLocalPath(string $source): bool
+    {
+        if ($source === '') {
+            return false;
+        }
+        return str_contains($source, '/.local/')
+            || str_contains($source, '\\.local\\');
     }
 
     private function isAllowed(string $key, array $allowed): bool

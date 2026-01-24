@@ -1,21 +1,20 @@
 # Config Pipeline Spec (PHP)
 
 This repository provides a PHP implementation of a pipeline/phase based config spec.
-It includes a Dotenv loader, manifest validation, and runtime policy checks.
+It includes a YAML loader, manifest validation, and runtime policy checks.
 
 ## Concepts
 
 - **Pipeline**: project flow (e.g. `dev`, `smoketest`, `delivery`)
 - **Phase**: lifecycle step (e.g. `setup`, `build`, `runtime`, `deploy`)
 
-## Dotenv file order
+## Config file order
 
-1) `.env`
-2) `.env.local`
-3) `.env.<PIPELINE>`
-4) `.env.<PIPELINE>.local`
-5) `.env.<PIPELINE>.<PHASE>`
-6) `.env.<PIPELINE>.<PHASE>.local`
+1) `config/common.yaml` (optional)
+2) `config/<PIPELINE>.yaml`
+3) `.local/<PIPELINE>.yaml`
+4) `config/<PIPELINE>-<PHASE>.yaml`
+5) `.local/<PIPELINE>-<PHASE>.yaml`
 
 ## Manifest format
 
@@ -48,7 +47,7 @@ pipelines:
 ## API (language-agnostic)
 
 - **Context**: `pipeline`, `phase`
-- **Dotenv loader**: loads context-scoped config files
+- **YAML loader**: loads context-scoped config files
 - **Manifest**: parses and expands groups/wildcards
 - **Policy**: validates allowed/required and source rules
 - **Compiler**: produces a validated config snapshot
