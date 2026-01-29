@@ -1,7 +1,10 @@
 <?php
 
-namespace ConfigPipelineSpec\Config;
+namespace PipelineConfigSpec\Internal;
 
+/**
+ * @internal
+ */
 final class ConfigSnapshot
 {
     private array $values;

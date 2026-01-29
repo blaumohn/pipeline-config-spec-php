@@ -1,5 +1,5 @@
 {
-  "name": "blaumohn/config-pipeline-spec-php",
+  "name": "pipeline-config-spec/lib",
   "description": "Pipeline/phase based config manifest with YAML loading and policy validation.",
   "type": "library",
   "version": "0.1.0",
@@ -11,12 +11,12 @@
   },
   "autoload": {
     "psr-4": {
-      "ConfigPipelineSpec\\": "src/"
+      "PipelineConfigSpec\\": "src/"
     }
   },
   "autoload-dev": {
     "psr-4": {
-      "ConfigPipelineSpec\\Tests\\": "tests/"
+      "PipelineConfigSpec\\Tests\\": "tests/"
     }
   },
   "require-dev": {

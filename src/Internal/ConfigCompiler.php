@@ -1,68 +1,78 @@
 <?php
 
-namespace ConfigPipelineSpec\Config;
+namespace PipelineConfigSpec\Internal;
 
 use Symfony\Component\Filesystem\Path;
 
+/**
+ * @internal
+ */
 final class ConfigCompiler
 {
     private string $rootPath;
-    private ContextResolver $contextResolver;
+    private string $configDir;
     private ConfigLoader $loader;
     private Manifest $manifest;
     private ManifestValidator $manifestValidator;
     private ConfigPolicy $policy;
 
-    public function __construct(string $rootPath)
+    public function __construct(string $rootPath, string $configDir = 'config')
     {
         $this->rootPath = rtrim($rootPath, DIRECTORY_SEPARATOR);
-        $this->contextResolver = new ContextResolver();
-        $this->loader = new ConfigLoader($this->rootPath);
-        $this->manifest = new Manifest($this->rootPath);
+        $this->configDir = $this->normalizeConfigDir($configDir);
+        $this->loader = new ConfigLoader($this->rootPath, $this->configDir);
+        $this->manifest = new Manifest($this->rootPath, $this->configDir);
         $this->manifestValidator = new ManifestValidator();
         $this->policy = new ConfigPolicy();
     }
 
-    public function compile(Context $context, bool $interactive, ?string $targetPath = null, array $overrides = []): string
-    {
-        $snapshot = $this->resolve($context, $overrides);
+    public function compile(
+        string $pipeline,
+        string $phase,
+        ?string $targetPath = null,
+        array $overrides = []
+    ): string {
+        $snapshot = $this->resolve($pipeline, $phase, $overrides);
+        $values = $this->filterAllowed($pipeline, $phase, $snapshot->values());
 
-        $values = $this->filterAllowed($context, $snapshot->values());
-
-        $targetPath = $targetPath ?? Path::join($this->rootPath, 'var', 'config', 'env.php');
+        $targetPath = $this->resolveTargetPath($targetPath);
         $this->writeCompiled($targetPath, $values);
 
         return $targetPath;
     }
 
-
-    public function resolve(Context $context, array $overrides = []): ConfigSnapshot
+    public function resolve(string $pipeline, string $phase, array $overrides = []): ConfigSnapshot
     {
         $this->manifestValidator->validate($this->manifest->data());
 
         $base = [
-            'PIPELINE' => $context->pipeline(),
-            'PHASE' => $context->phase(),
+            'PIPELINE' => $pipeline,
+            'PHASE' => $phase,
         ];
 
-        $snapshot = $this->loader->load($context, array_merge($base, $overrides));
-        $snapshot = $this->filterSnapshot($context, $snapshot);
-        $errors = $this->policy->validate($this->manifest, $context, $snapshot);
+        $values = array_merge($base, $overrides);
+        $snapshot = $this->loader->load($pipeline, $phase, $values);
+        $snapshot = $this->filterSnapshot($pipeline, $phase, $snapshot);
+        $errors = $this->policy->validate($this->manifest, $pipeline, $phase, $snapshot);
         if ($errors !== []) {
-            throw new \RuntimeException("Config-Validierung fehlgeschlagen:\n- " . implode("\n- ", $errors));
+            $message = "Config-Validierung fehlgeschlagen:\n- " . implode("\n- ", $errors);
+            throw new \RuntimeException($message);
         }
 
         return $snapshot;
     }
 
-    public function validate(Context $context, bool $interactive, array $overrides = []): ConfigSnapshot
+    public function validate(string $pipeline, string $phase, array $overrides = []): ConfigSnapshot
     {
-        return $this->resolve($context, $overrides);
+        return $this->resolve($pipeline, $phase, $overrides);
     }
 
-    private function filterSnapshot(Context $context, ConfigSnapshot $snapshot): ConfigSnapshot
-    {
-        $phaseConfig = $this->manifest->resolvePhaseConfig($context);
+    private function filterSnapshot(
+        string $pipeline,
+        string $phase,
+        ConfigSnapshot $snapshot
+    ): ConfigSnapshot {
+        $phaseConfig = $this->manifest->resolvePhaseConfig($pipeline, $phase);
         if ($phaseConfig === null) {
             return $snapshot;
         }
@@ -93,14 +103,9 @@ final class ConfigCompiler
         return $this->isAllowed($key, $allowed);
     }
 
-    public function resolveContext(array $defaults, array $overrides = []): Context
+    private function filterAllowed(string $pipeline, string $phase, array $values): array
     {
-        return $this->contextResolver->resolve($defaults, $overrides);
-    }
-
-    private function filterAllowed(Context $context, array $values): array
-    {
-        $phaseConfig = $this->manifest->resolvePhaseConfig($context);
+        $phaseConfig = $this->manifest->resolvePhaseConfig($pipeline, $phase);
         if ($phaseConfig === null) {
             return [];
         }
@@ -135,6 +140,14 @@ final class ConfigCompiler
         return false;
     }
 
+    private function resolveTargetPath(?string $targetPath): string
+    {
+        if ($targetPath !== null) {
+            return $targetPath;
+        }
+        return Path::join($this->rootPath, 'var', 'config', 'config.php');
+    }
+
     private function writeCompiled(string $path, array $values): void
     {
         $dir = dirname($path);
@@ -143,5 +156,14 @@ final class ConfigCompiler
         }
         $payload = "<?php\n\nreturn " . var_export($values, true) . ";\n";
         file_put_contents($path, $payload);
+    }
+
+    private function normalizeConfigDir(string $configDir): string
+    {
+        $trimmed = trim($configDir, DIRECTORY_SEPARATOR);
+        if ($trimmed === '') {
+            return 'config';
+        }
+        return $trimmed;
     }
 }

@@ -1,15 +1,22 @@
 <?php
 
-namespace ConfigPipelineSpec\Config;
+namespace PipelineConfigSpec\Internal;
 
+/**
+ * @internal
+ */
 final class ConfigPolicy
 {
-    public function validate(Manifest $manifest, Context $context, ConfigSnapshot $snapshot): array
-    {
+    public function validate(
+        Manifest $manifest,
+        string $pipeline,
+        string $phase,
+        ConfigSnapshot $snapshot
+    ): array {
         $errors = [];
-        $phaseConfig = $manifest->resolvePhaseConfig($context);
+        $phaseConfig = $manifest->resolvePhaseConfig($pipeline, $phase);
         if ($phaseConfig === null) {
-            $errors[] = "Unbekannte Pipeline/Phase: {$context->pipeline()}/{$context->phase()}";
+            $errors[] = "Unbekannte Pipeline/Phase: {$pipeline}/{$phase}";
             return $errors;
         }
 

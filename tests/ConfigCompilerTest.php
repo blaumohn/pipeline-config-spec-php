@@ -2,10 +2,9 @@
 
 declare(strict_types=1);
 
-namespace ConfigPipelineSpec\Tests;
+namespace PipelineConfigSpec\Tests;
 
-use ConfigPipelineSpec\Config\ConfigCompiler;
-use ConfigPipelineSpec\Config\Context;
+use PipelineConfigSpec\Internal\ConfigCompiler;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\Yaml\Yaml;
 
@@ -34,8 +33,8 @@ final class ConfigCompilerTest extends TestCase
         $this->writeYaml($root, 'config/common.yaml', "EXTRA: ignore\n");
 
         $compiler = new ConfigCompiler($root);
-        $context = new Context('dev', 'runtime');
-        $compiler->compile($context, false, $root . '/out/env.php');
+        $targetPath = $root . '/out/config.php';
+        $compiler->compile('dev', 'runtime', $targetPath);
     }
 
     private function createRoot(): string
@@ -53,7 +52,7 @@ final class ConfigCompilerTest extends TestCase
     private function writeManifest(string $root, array $manifest): void
     {
         $payload = Yaml::dump($manifest, 8, 2);
-        $path = $root . '/config/env.manifest.yaml';
+        $path = $root . '/config/config.manifest.yaml';
         if (file_put_contents($path, $payload) === false) {
             throw new \RuntimeException('Failed to write manifest.');
         }
@@ -102,9 +101,8 @@ final class ConfigCompilerTest extends TestCase
     private function compileValues(string $root): array
     {
         $compiler = new ConfigCompiler($root);
-        $context = new Context('dev', 'runtime');
-        $target = $root . '/out/env.php';
-        $path = $compiler->compile($context, false, $target);
+        $targetPath = $root . '/out/config.php';
+        $path = $compiler->compile('dev', 'runtime', $targetPath);
         return $this->readConfig($path);
     }
 

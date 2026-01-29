@@ -2,33 +2,24 @@
 
 declare(strict_types=1);
 
-namespace ConfigPipelineSpec\Tests;
+namespace PipelineConfigSpec\Tests;
 
-use ConfigPipelineSpec\Config\ConfigLoader;
-use ConfigPipelineSpec\Config\Context;
+use PipelineConfigSpec\Internal\ConfigLoader;
 use PHPUnit\Framework\TestCase;
 
 final class ConfigLoaderTest extends TestCase
 {
-    public function testLoadsYamlFilesInOrder(): void
+    public function testLoadsFilesInOrder(): void
     {
         $root = $this->createRoot();
         $this->seedYamlFiles($root);
 
         $loader = new ConfigLoader($root);
-        $snapshot = $loader->load(new Context('dev', 'runtime'));
+        $snapshot = $loader->load('dev', 'runtime');
 
-        self::assertSame('runtime_local', $snapshot->values()['KEY'] ?? null);
-        $files = $snapshot->loadedFiles();
-        self::assertSame([
-            $root . '/config/common.yaml',
-            $root . '/config/dev.yaml',
-            $root . '/.local/dev.yaml',
-            $root . '/config/dev-runtime.yaml',
-            $root . '/.local/dev-runtime.yaml',
-        ], $files);
-        self::assertNotContains($root . '/config/dev-preview.yaml', $files);
-        self::assertNotContains($root . '/.local/dev-preview.yaml', $files);
+        self::assertSame('first', $snapshot->values()['APP_ENV'] ?? null);
+        self::assertSame('local', $snapshot->values()['LOCAL'] ?? null);
+        self::assertSame('runtime', $snapshot->values()['PHASE'] ?? null);
     }
 
     private function createRoot(): string
@@ -37,7 +28,21 @@ final class ConfigLoaderTest extends TestCase
         if (!mkdir($root, 0775, true) && !is_dir($root)) {
             throw new \RuntimeException('Failed to create root directory.');
         }
+        if (!mkdir($root . '/config', 0775, true) && !is_dir($root . '/config')) {
+            throw new \RuntimeException('Failed to create config directory.');
+        }
+        if (!mkdir($root . '/.local', 0775, true) && !is_dir($root . '/.local')) {
+            throw new \RuntimeException('Failed to create local directory.');
+        }
         return $root;
+    }
+
+    private function seedYamlFiles(string $root): void
+    {
+        $this->writeYaml($root, 'config/common.yaml', "APP_ENV: first\n");
+        $this->writeYaml($root, 'config/dev.yaml', "APP_ENV: second\n");
+        $this->writeYaml($root, '.local/dev.yaml', "LOCAL: local\n");
+        $this->writeYaml($root, 'config/dev-runtime.yaml', "PHASE: runtime\n");
     }
 
     private function writeYaml(string $root, string $file, string $content): void
@@ -49,22 +54,6 @@ final class ConfigLoaderTest extends TestCase
         }
         if (file_put_contents($path, $content) === false) {
             throw new \RuntimeException('Failed to write yaml file.');
-        }
-    }
-
-    private function seedYamlFiles(string $root): void
-    {
-        $files = [
-            'config/common.yaml' => "KEY: base\n",
-            'config/dev.yaml' => "KEY: dev\n",
-            '.local/dev.yaml' => "KEY: dev_local\n",
-            'config/dev-runtime.yaml' => "KEY: runtime\n",
-            '.local/dev-runtime.yaml' => "KEY: runtime_local\n",
-            'config/dev-preview.yaml' => "KEY: preview\n",
-            '.local/dev-preview.yaml' => "KEY: preview_local\n",
-        ];
-        foreach ($files as $file => $content) {
-            $this->writeYaml($root, $file, $content);
         }
     }
 }

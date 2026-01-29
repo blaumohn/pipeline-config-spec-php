@@ -18,7 +18,7 @@ Es umfasst YAML-Laden, Manifest-Validierung und Policy-Pruefungen.
 
 ## Manifest-Format
 
-`config/env.manifest.yaml`:
+`config/config.manifest.yaml`:
 
 ```yaml
 variables:
@@ -46,7 +46,7 @@ pipelines:
 
 ## API (sprachunabhaengig)
 
-- **Context**: `pipeline`, `phase`
+- **Inputs**: `pipeline`, `phase`
 - **YAML-Loader**: laedt kontextbezogene Config-Dateien
 - **Manifest**: expandiert Gruppen/Wildcards
 - **Policy**: prueft allowed/required und sources
@@ -55,12 +55,14 @@ pipelines:
 ## PHP-Beispiel
 
 ```php
-use ConfigPipelineSpec\Config\ConfigCompiler;
+use PipelineConfigSpec\PipelineConfigService;
 
-$compiler = new ConfigCompiler($rootPath);
-$context = $compiler->resolveContext([
-    'pipeline' => 'dev',
-    'phase' => 'runtime',
-]);
-$compiler->compile($context, false);
+$configService = new PipelineConfigService($rootPath);
+$configService->compile('dev', 'runtime');
+```
+
+Optional: eigenes Config-Verzeichnis (Default ist `config/`):
+
+```php
+$configService = new PipelineConfigService($rootPath, 'src/resources/config');
 ```

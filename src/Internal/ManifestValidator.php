@@ -1,10 +1,13 @@
 <?php
 
-namespace ConfigPipelineSpec\Config;
+namespace PipelineConfigSpec\Internal;
 
 use Symfony\Component\Config\Definition\Builder\TreeBuilder;
 use Symfony\Component\Config\Definition\Processor;
 
+/**
+ * @internal
+ */
 final class ManifestValidator
 {
     public function validate(array $data): void
