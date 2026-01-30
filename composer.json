@@ -1,5 +1,5 @@
 {
-  "name": "blaumohn/config-pipeline-spec-php",
+  "name": "pipeline-config-spec/lib",
   "description": "Pipeline/phase based config manifest with Dotenv loading and policy validation.",
   "type": "library",
   "version": "0.1.0",
