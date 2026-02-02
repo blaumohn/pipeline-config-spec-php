@@ -44,14 +44,21 @@ final class ConfigCompiler
     public function resolve(string $pipeline, string $phase, array $overrides = []): ConfigSnapshot
     {
         $this->manifestValidator->validate($this->manifest->data());
+        $phaseConfig = $this->manifest->resolvePhaseConfig($pipeline, $phase);
+        if ($phaseConfig === null) {
+            throw new \RuntimeException("Unbekannte Pipeline/Phase: {$pipeline}/{$phase}");
+        }
 
-        $base = [
+        $baseOverrides = [
             'PIPELINE' => $pipeline,
             'PHASE' => $phase,
         ];
-
-        $values = array_merge($base, $overrides);
-        $snapshot = $this->loader->load($pipeline, $phase, $values);
+        $cliOverrides = array_merge($baseOverrides, $overrides);
+        $systemKeys = $this->manifest->variableKeys();
+        $fileLayer = $this->loader->load($pipeline, $phase);
+        $systemLayer = $this->loader->loadSystem($systemKeys);
+        $cliLayer = $this->loader->loadOverrides($cliOverrides);
+        $snapshot = $this->mergeLayers([$fileLayer, $systemLayer, $cliLayer]);
         $snapshot = $this->filterSnapshot($pipeline, $phase, $snapshot);
         $errors = $this->policy->validate($this->manifest, $pipeline, $phase, $snapshot);
         if ($errors !== []) {
@@ -65,6 +72,22 @@ final class ConfigCompiler
     public function validate(string $pipeline, string $phase, array $overrides = []): ConfigSnapshot
     {
         return $this->resolve($pipeline, $phase, $overrides);
+    }
+
+    private function mergeLayers(array $layers): ConfigSnapshot
+    {
+        $values = [];
+        $sources = [];
+        $loadedFiles = [];
+        foreach ($layers as $layer) {
+            if (!$layer instanceof ConfigSnapshot) {
+                continue;
+            }
+            $values = array_merge($values, $layer->values());
+            $sources = array_merge($sources, $layer->sources());
+            $loadedFiles = array_merge($loadedFiles, $layer->loadedFiles());
+        }
+        return new ConfigSnapshot($values, $sources, $loadedFiles);
     }
 
     private function filterSnapshot(

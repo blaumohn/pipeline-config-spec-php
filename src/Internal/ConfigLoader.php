@@ -19,7 +19,7 @@ final class ConfigLoader
         $this->configDir = $this->normalizeConfigDir($configDir);
     }
 
-    public function load(string $pipeline, string $phase, array $overrides = []): ConfigSnapshot
+    public function load(string $pipeline, string $phase): ConfigSnapshot
     {
         $values = [];
         $sources = [];
@@ -41,6 +41,31 @@ final class ConfigLoader
             $loadedFiles[] = $file;
         }
 
+        return new ConfigSnapshot($values, $sources, $loadedFiles);
+    }
+
+    public function loadSystem(array $keys): ConfigSnapshot
+    {
+        $values = [];
+        $sources = [];
+        foreach ($keys as $key) {
+            if (!is_string($key) || $key === '') {
+                continue;
+            }
+            $value = getenv($key);
+            if ($value === false) {
+                continue;
+            }
+            $values[$key] = $value;
+            $sources[$key] = 'system';
+        }
+        return new ConfigSnapshot($values, $sources, []);
+    }
+
+    public function loadOverrides(array $overrides): ConfigSnapshot
+    {
+        $values = [];
+        $sources = [];
         foreach ($overrides as $key => $value) {
             if (!is_string($key)) {
                 continue;
@@ -48,8 +73,7 @@ final class ConfigLoader
             $values[$key] = $value;
             $sources[$key] = 'cli';
         }
-
-        return new ConfigSnapshot($values, $sources, $loadedFiles);
+        return new ConfigSnapshot($values, $sources, []);
     }
 
     private function configFiles(string $pipeline, string $phase): array

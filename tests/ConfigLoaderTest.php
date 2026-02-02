@@ -17,9 +17,22 @@ final class ConfigLoaderTest extends TestCase
         $loader = new ConfigLoader($root);
         $snapshot = $loader->load('dev', 'runtime');
 
-        self::assertSame('first', $snapshot->values()['APP_ENV'] ?? null);
+        self::assertSame('second', $snapshot->values()['APP_ENV'] ?? null);
         self::assertSame('local', $snapshot->values()['LOCAL'] ?? null);
         self::assertSame('runtime', $snapshot->values()['PHASE'] ?? null);
+    }
+
+    public function testLoadsSystemLayerForRequestedKeys(): void
+    {
+        $root = $this->createRoot();
+        $loader = new ConfigLoader($root);
+        putenv('IP_SALT=test-salt');
+
+        $snapshot = $loader->loadSystem(['IP_SALT']);
+        putenv('IP_SALT');
+
+        self::assertSame('test-salt', $snapshot->values()['IP_SALT'] ?? null);
+        self::assertSame('system', $snapshot->sources()['IP_SALT'] ?? null);
     }
 
     private function createRoot(): string

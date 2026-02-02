@@ -52,6 +52,47 @@ final class ConfigPolicyTest extends TestCase
         self::assertNotEmpty($errors);
     }
 
+    public function testSourceMismatchFails(): void
+    {
+        $root = $this->createRoot();
+        $this->writeManifest($root, [
+            'variables' => [
+                'context' => [
+                    'PIPELINE' => [],
+                    'PHASE' => [],
+                ],
+                'mail' => [
+                    'SMTP_PASS' => [
+                        'sources' => ['local'],
+                    ],
+                ],
+            ],
+            'pipelines' => [
+                'common' => [
+                    'runtime' => [
+                        'required' => ['PIPELINE', 'PHASE', 'SMTP_PASS'],
+                        'allowed' => ['context', 'mail'],
+                    ],
+                ],
+            ],
+        ]);
+
+        $policy = new ConfigPolicy();
+        $manifest = new Manifest($root);
+        $snapshot = new ConfigSnapshot([
+            'PIPELINE' => 'dev',
+            'PHASE' => 'runtime',
+            'SMTP_PASS' => 'secret',
+        ], [
+            'PIPELINE' => 'cli',
+            'PHASE' => 'cli',
+            'SMTP_PASS' => 'system',
+        ], []);
+
+        $errors = $policy->validate($manifest, 'dev', 'runtime', $snapshot);
+        self::assertNotEmpty($errors);
+    }
+
     private function createRoot(): string
     {
         $root = rtrim(sys_get_temp_dir(), DIRECTORY_SEPARATOR) . '/config-pipeline-spec-' . uniqid('', true);

@@ -37,6 +37,38 @@ final class ConfigCompilerTest extends TestCase
         $compiler->compile('dev', 'runtime', $targetPath);
     }
 
+    public function testCompileReadsSystemValueWhenSourceAllowsIt(): void
+    {
+        $root = $this->createRoot();
+        $this->writeManifest($root, [
+            'variables' => [
+                'context' => [
+                    'PIPELINE' => [],
+                    'PHASE' => [],
+                ],
+                'security' => [
+                    'IP_SALT' => [
+                        'sources' => ['system'],
+                    ],
+                ],
+            ],
+            'pipelines' => [
+                'common' => [
+                    'runtime' => [
+                        'required' => ['PIPELINE', 'PHASE', 'IP_SALT'],
+                        'allowed' => ['context', 'security'],
+                    ],
+                ],
+            ],
+        ]);
+        putenv('IP_SALT=test-salt');
+
+        $values = $this->compileValues($root);
+        putenv('IP_SALT');
+
+        self::assertSame('test-salt', $values['IP_SALT'] ?? null);
+    }
+
     private function createRoot(): string
     {
         $root = rtrim(sys_get_temp_dir(), DIRECTORY_SEPARATOR) . '/config-pipeline-spec-' . uniqid('', true);
