@@ -1,15 +1,22 @@
 <?php
 
-namespace ConfigPipelineSpec\Config;
+namespace PipelineConfigSpec\Internal;
 
+/**
+ * @internal
+ */
 final class ConfigPolicy
 {
-    public function validate(Manifest $manifest, Context $context, ConfigSnapshot $snapshot): array
-    {
+    public function validate(
+        Manifest $manifest,
+        string $pipeline,
+        string $phase,
+        ConfigSnapshot $snapshot
+    ): array {
         $errors = [];
-        $phaseConfig = $manifest->resolvePhaseConfig($context);
+        $phaseConfig = $manifest->resolvePhaseConfig($pipeline, $phase);
         if ($phaseConfig === null) {
-            $errors[] = "Unbekannte Pipeline/Phase: {$context->pipeline()}/{$context->phase()}";
+            $errors[] = "Unbekannte Pipeline/Phase: {$pipeline}/{$phase}";
             return $errors;
         }
 
@@ -88,13 +95,22 @@ final class ConfigPolicy
         if ($source === 'system' || $source === 'cli') {
             return $source;
         }
-        if ($source !== '' && str_ends_with($source, '.local')) {
+        if ($this->isLocalPath($source)) {
             return 'local';
         }
         if ($source !== '') {
             return 'file';
         }
         return 'unknown';
+    }
+
+    private function isLocalPath(string $source): bool
+    {
+        if ($source === '') {
+            return false;
+        }
+        return str_contains($source, '/.local/')
+            || str_contains($source, '\\.local\\');
     }
 
     private function isAllowed(string $key, array $allowed): bool

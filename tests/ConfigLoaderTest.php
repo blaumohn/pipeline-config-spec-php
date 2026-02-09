@@ -2,34 +2,37 @@
 
 declare(strict_types=1);
 
-namespace ConfigPipelineSpec\Tests;
+namespace PipelineConfigSpec\Tests;
 
-use ConfigPipelineSpec\Config\ConfigLoader;
-use ConfigPipelineSpec\Config\Context;
+use PipelineConfigSpec\Internal\ConfigLoader;
 use PHPUnit\Framework\TestCase;
 
 final class ConfigLoaderTest extends TestCase
 {
-    public function testLoadsDotenvFilesInOrderWithoutProfile(): void
+    public function testLoadsFilesInOrder(): void
     {
         $root = $this->createRoot();
-        $this->seedEnvFiles($root);
+        $this->seedYamlFiles($root);
 
         $loader = new ConfigLoader($root);
-        $snapshot = $loader->load(new Context('dev', 'runtime'));
+        $snapshot = $loader->load('dev', 'runtime');
 
-        self::assertSame('runtime_local', $snapshot->values()['KEY'] ?? null);
-        $files = $snapshot->loadedFiles();
-        self::assertSame([
-            $root . '/.env',
-            $root . '/.env.local',
-            $root . '/.env.dev',
-            $root . '/.env.dev.local',
-            $root . '/.env.dev.runtime',
-            $root . '/.env.dev.runtime.local',
-        ], $files);
-        self::assertNotContains($root . '/.env.dev.preview', $files);
-        self::assertNotContains($root . '/.env.dev.preview.runtime', $files);
+        self::assertSame('second', $snapshot->values()['APP_ENV'] ?? null);
+        self::assertSame('local', $snapshot->values()['LOCAL'] ?? null);
+        self::assertSame('runtime', $snapshot->values()['PHASE'] ?? null);
+    }
+
+    public function testLoadsSystemLayerForRequestedKeys(): void
+    {
+        $root = $this->createRoot();
+        $loader = new ConfigLoader($root);
+        putenv('IP_SALT=test-salt');
+
+        $snapshot = $loader->loadSystem(['IP_SALT']);
+        putenv('IP_SALT');
+
+        self::assertSame('test-salt', $snapshot->values()['IP_SALT'] ?? null);
+        self::assertSame('system', $snapshot->sources()['IP_SALT'] ?? null);
     }
 
     private function createRoot(): string
@@ -38,31 +41,32 @@ final class ConfigLoaderTest extends TestCase
         if (!mkdir($root, 0775, true) && !is_dir($root)) {
             throw new \RuntimeException('Failed to create root directory.');
         }
+        if (!mkdir($root . '/config', 0775, true) && !is_dir($root . '/config')) {
+            throw new \RuntimeException('Failed to create config directory.');
+        }
+        if (!mkdir($root . '/.local', 0775, true) && !is_dir($root . '/.local')) {
+            throw new \RuntimeException('Failed to create local directory.');
+        }
         return $root;
     }
 
-    private function writeEnv(string $root, string $file, string $content): void
+    private function seedYamlFiles(string $root): void
     {
-        $path = $root . '/' . $file;
-        if (file_put_contents($path, $content) === false) {
-            throw new \RuntimeException('Failed to write env file.');
-        }
+        $this->writeYaml($root, 'config/common.yaml', "APP_ENV: first\n");
+        $this->writeYaml($root, 'config/dev.yaml', "APP_ENV: second\n");
+        $this->writeYaml($root, '.local/dev.yaml', "LOCAL: local\n");
+        $this->writeYaml($root, 'config/dev-runtime.yaml', "PHASE: runtime\n");
     }
 
-    private function seedEnvFiles(string $root): void
+    private function writeYaml(string $root, string $file, string $content): void
     {
-        $files = [
-            '.env' => "KEY=base\n",
-            '.env.local' => "KEY=local\n",
-            '.env.dev' => "KEY=dev\n",
-            '.env.dev.local' => "KEY=dev_local\n",
-            '.env.dev.runtime' => "KEY=runtime\n",
-            '.env.dev.runtime.local' => "KEY=runtime_local\n",
-            '.env.dev.preview' => "KEY=profile\n",
-            '.env.dev.preview.runtime' => "KEY=profile_runtime\n",
-        ];
-        foreach ($files as $file => $content) {
-            $this->writeEnv($root, $file, $content);
+        $path = $root . '/' . $file;
+        $dir = dirname($path);
+        if (!is_dir($dir)) {
+            mkdir($dir, 0775, true);
+        }
+        if (file_put_contents($path, $content) === false) {
+            throw new \RuntimeException('Failed to write yaml file.');
         }
     }
 }

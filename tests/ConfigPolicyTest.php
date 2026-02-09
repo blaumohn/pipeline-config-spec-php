@@ -2,109 +2,135 @@
 
 declare(strict_types=1);
 
-namespace ConfigPipelineSpec\Tests;
+namespace PipelineConfigSpec\Tests;
 
-use ConfigPipelineSpec\Config\Context;
-use ConfigPipelineSpec\Config\ConfigPolicy;
-use ConfigPipelineSpec\Config\ConfigSnapshot;
-use ConfigPipelineSpec\Config\Manifest;
+use PipelineConfigSpec\Internal\ConfigPolicy;
+use PipelineConfigSpec\Internal\ConfigSnapshot;
+use PipelineConfigSpec\Internal\Manifest;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\Yaml\Yaml;
 
 final class ConfigPolicyTest extends TestCase
 {
-    public function testRejectsDisallowedSource(): void
+    public function testValidConfigPasses(): void
     {
-        $root = $this->createFixture([
-            'variables' => [
-                'context' => [
-                    'PIPELINE' => [],
-                    'PHASE' => [],
-                ],
-                'security' => [
-                    'IP_SALT' => ['sources' => ['system', 'local']],
-                ],
-            ],
-            'pipelines' => [
-                'common' => [
-                    'runtime' => [
-                        'required' => ['PIPELINE', 'PHASE', 'IP_SALT'],
-                        'allowed' => ['context', 'security'],
-                    ],
-                ],
-            ],
-        ]);
+        $root = $this->createRoot();
+        $this->writeManifest($root, $this->manifestData());
 
-        $manifest = new Manifest($root);
         $policy = new ConfigPolicy();
-        $context = new Context('dev', 'runtime');
+        $manifest = new Manifest($root);
         $snapshot = new ConfigSnapshot([
             'PIPELINE' => 'dev',
             'PHASE' => 'runtime',
-            'IP_SALT' => 'secret',
         ], [
-            'PIPELINE' => 'system',
-            'PHASE' => 'system',
-            'IP_SALT' => '/tmp/.env',
+            'PIPELINE' => 'cli',
+            'PHASE' => 'cli',
         ], []);
 
-        $errors = $policy->validate($manifest, $context, $snapshot);
-
-        self::assertNotEmpty($errors);
-    }
-
-    public function testAllowsLocalSource(): void
-    {
-        $root = $this->createFixture([
-            'variables' => [
-                'context' => [
-                    'PIPELINE' => [],
-                    'PHASE' => [],
-                ],
-                'security' => [
-                    'IP_SALT' => ['sources' => ['system', 'local']],
-                ],
-            ],
-            'pipelines' => [
-                'common' => [
-                    'runtime' => [
-                        'required' => ['PIPELINE', 'PHASE', 'IP_SALT'],
-                        'allowed' => ['context', 'security'],
-                    ],
-                ],
-            ],
-        ]);
-
-        $manifest = new Manifest($root);
-        $policy = new ConfigPolicy();
-        $context = new Context('dev', 'runtime');
-        $snapshot = new ConfigSnapshot([
-            'PIPELINE' => 'dev',
-            'PHASE' => 'runtime',
-            'IP_SALT' => 'secret',
-        ], [
-            'PIPELINE' => 'system',
-            'PHASE' => 'system',
-            'IP_SALT' => '/tmp/.env.local',
-        ], []);
-
-        $errors = $policy->validate($manifest, $context, $snapshot);
-
+        $errors = $policy->validate($manifest, 'dev', 'runtime', $snapshot);
         self::assertSame([], $errors);
     }
 
-    private function createFixture(array $manifest): string
+    public function testDisallowedKeyFails(): void
     {
-        $root = sys_get_temp_dir() . '/env-pipeline-spec-' . uniqid('', true);
-        $configDir = $root . '/config';
-        if (!mkdir($configDir, 0775, true) && !is_dir($configDir)) {
-            throw new \RuntimeException('Failed to create fixture directory.');
+        $root = $this->createRoot();
+        $this->writeManifest($root, $this->manifestData());
+
+        $policy = new ConfigPolicy();
+        $manifest = new Manifest($root);
+        $snapshot = new ConfigSnapshot([
+            'PIPELINE' => 'dev',
+            'PHASE' => 'runtime',
+            'EXTRA' => 'x',
+        ], [
+            'PIPELINE' => 'cli',
+            'PHASE' => 'cli',
+            'EXTRA' => 'cli',
+        ], []);
+
+        $errors = $policy->validate($manifest, 'dev', 'runtime', $snapshot);
+        self::assertNotEmpty($errors);
+    }
+
+    public function testSourceMismatchFails(): void
+    {
+        $root = $this->createRoot();
+        $this->writeManifest($root, [
+            'variables' => [
+                'context' => [
+                    'PIPELINE' => [],
+                    'PHASE' => [],
+                ],
+                'mail' => [
+                    'SMTP_PASS' => [
+                        'sources' => ['local'],
+                    ],
+                ],
+            ],
+            'pipelines' => [
+                'common' => [
+                    'runtime' => [
+                        'required' => ['PIPELINE', 'PHASE', 'SMTP_PASS'],
+                        'allowed' => ['context', 'mail'],
+                    ],
+                ],
+            ],
+        ]);
+
+        $policy = new ConfigPolicy();
+        $manifest = new Manifest($root);
+        $snapshot = new ConfigSnapshot([
+            'PIPELINE' => 'dev',
+            'PHASE' => 'runtime',
+            'SMTP_PASS' => 'secret',
+        ], [
+            'PIPELINE' => 'cli',
+            'PHASE' => 'cli',
+            'SMTP_PASS' => 'system',
+        ], []);
+
+        $errors = $policy->validate($manifest, 'dev', 'runtime', $snapshot);
+        self::assertNotEmpty($errors);
+    }
+
+    private function createRoot(): string
+    {
+        $root = rtrim(sys_get_temp_dir(), DIRECTORY_SEPARATOR) . '/config-pipeline-spec-' . uniqid('', true);
+        if (!mkdir($root, 0775, true) && !is_dir($root)) {
+            throw new \RuntimeException('Failed to create root directory.');
         }
+        if (!mkdir($root . '/config', 0775, true) && !is_dir($root . '/config')) {
+            throw new \RuntimeException('Failed to create config directory.');
+        }
+        return $root;
+    }
+
+    private function writeManifest(string $root, array $manifest): void
+    {
         $payload = Yaml::dump($manifest, 8, 2);
-        $path = $configDir . '/env.manifest.yaml';
+        $path = $root . '/config/config.manifest.yaml';
         if (file_put_contents($path, $payload) === false) {
             throw new \RuntimeException('Failed to write manifest.');
         }
-        return $root;
+    }
+
+    private function manifestData(): array
+    {
+        return [
+            'variables' => [
+                'context' => [
+                    'PIPELINE' => [],
+                    'PHASE' => [],
+                ],
+            ],
+            'pipelines' => [
+                'common' => [
+                    'runtime' => [
+                        'required' => ['PIPELINE', 'PHASE'],
+                        'allowed' => ['context'],
+                    ],
+                ],
+            ],
+        ];
     }
 }

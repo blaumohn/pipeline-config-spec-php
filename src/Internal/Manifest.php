@@ -1,25 +1,29 @@
 <?php
 
-namespace ConfigPipelineSpec\Config;
+namespace PipelineConfigSpec\Internal;
 
 use Symfony\Component\Filesystem\Path;
 use Symfony\Component\Yaml\Yaml;
 
+/**
+ * @internal
+ */
 final class Manifest
 {
     private array $data;
     private ?array $groupKeys = null;
     private ?array $variableSources = null;
 
-    public function __construct(string $rootPath)
+    public function __construct(string $rootPath, string $configDir = 'config')
     {
-        $path = Path::join($rootPath, 'config', 'env.manifest.yaml');
+        $configDir = $this->normalizeConfigDir($configDir);
+        $path = Path::join($rootPath, $configDir, 'config.manifest.yaml');
         if (!is_file($path)) {
-            throw new \RuntimeException("env.manifest.yaml fehlt: {$path}");
+            throw new \RuntimeException("config.manifest.yaml fehlt: {$path}");
         }
         $data = Yaml::parseFile($path);
         if (!is_array($data)) {
-            throw new \RuntimeException("env.manifest.yaml ungueltig: {$path}");
+            throw new \RuntimeException("config.manifest.yaml ungueltig: {$path}");
         }
         $this->data = $data;
     }
@@ -35,14 +39,14 @@ final class Manifest
         return is_array($variables) ? $variables : [];
     }
 
-    public function resolvePhaseConfig(Context $context): ?array
+    public function resolvePhaseConfig(string $pipeline, string $phase): ?array
     {
         $pipelines = $this->data['pipelines'] ?? [];
         if (!is_array($pipelines)) {
             return null;
         }
-        $common = $this->pipelinePhase($pipelines['common'] ?? null, $context->phase());
-        $specific = $this->pipelinePhase($pipelines[$context->pipeline()] ?? null, $context->phase());
+        $common = $this->pipelinePhase($pipelines['common'] ?? null, $phase);
+        $specific = $this->pipelinePhase($pipelines[$pipeline] ?? null, $phase);
         if ($common === null && $specific === null) {
             return null;
         }
@@ -57,7 +61,8 @@ final class Manifest
     public function expandRequired(array $required): array
     {
         $expanded = $this->expandRules($required);
-        return array_values(array_filter($expanded, fn (string $rule) => !str_contains($rule, '*')));
+        $filtered = array_filter($expanded, fn (string $rule) => !str_contains($rule, '*'));
+        return array_values($filtered);
     }
 
     public function sourcesForKey(string $key): array
@@ -167,5 +172,14 @@ final class Manifest
         }
         $this->variableSources = $sources;
         return $sources;
+    }
+
+    private function normalizeConfigDir(string $configDir): string
+    {
+        $trimmed = trim($configDir, DIRECTORY_SEPARATOR);
+        if ($trimmed === '') {
+            return 'config';
+        }
+        return $trimmed;
     }
 }

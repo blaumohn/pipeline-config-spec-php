@@ -1,25 +1,24 @@
 # Config Pipeline Spec (PHP)
 
 Dieses Repository enthaelt eine PHP-Implementierung einer Pipeline/Phase-basierten Config-Spec.
-Es umfasst Dotenv-Laden, Manifest-Validierung und Policy-Pruefungen.
+Es umfasst YAML-Laden, Manifest-Validierung und Policy-Pruefungen.
 
 ## Begriffe
 
 - **Pipeline**: Projektfluss (z. B. `dev`, `smoketest`, `delivery`)
 - **Phase**: Lebenszyklus-Schritt (z. B. `setup`, `build`, `runtime`, `deploy`)
 
-## Dotenv-Reihenfolge
+## Config-Reihenfolge
 
-1) `.env`
-2) `.env.local`
-3) `.env.<PIPELINE>`
-4) `.env.<PIPELINE>.local`
-5) `.env.<PIPELINE>.<PHASE>`
-6) `.env.<PIPELINE>.<PHASE>.local`
+1) `config/common.yaml` (optional)
+2) `config/<PIPELINE>.yaml`
+3) `.local/<PIPELINE>.yaml`
+4) `config/<PIPELINE>-<PHASE>.yaml`
+5) `.local/<PIPELINE>-<PHASE>.yaml`
 
 ## Manifest-Format
 
-`config/env.manifest.yaml`:
+`config/config.manifest.yaml`:
 
 ```yaml
 variables:
@@ -47,8 +46,8 @@ pipelines:
 
 ## API (sprachunabhaengig)
 
-- **Context**: `pipeline`, `phase`
-- **Dotenv-Loader**: laedt kontextbezogene Config-Dateien
+- **Inputs**: `pipeline`, `phase`
+- **YAML-Loader**: laedt kontextbezogene Config-Dateien
 - **Manifest**: expandiert Gruppen/Wildcards
 - **Policy**: prueft allowed/required und sources
 - **Compiler**: erzeugt ein validiertes Config-Snapshot
@@ -56,12 +55,14 @@ pipelines:
 ## PHP-Beispiel
 
 ```php
-use ConfigPipelineSpec\Config\ConfigCompiler;
+use PipelineConfigSpec\PipelineConfigService;
 
-$compiler = new ConfigCompiler($rootPath);
-$context = $compiler->resolveContext([
-    'pipeline' => 'dev',
-    'phase' => 'runtime',
-]);
-$compiler->compile($context, false);
+$configService = new PipelineConfigService($rootPath);
+$configService->compile('dev', 'runtime');
+```
+
+Optional: eigenes Config-Verzeichnis (Default ist `config/`):
+
+```php
+$configService = new PipelineConfigService($rootPath, 'src/resources/config');
 ```
