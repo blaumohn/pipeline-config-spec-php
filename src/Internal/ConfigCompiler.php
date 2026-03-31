@@ -44,8 +44,8 @@ final class ConfigCompiler
     public function resolve(string $pipeline, string $phase, array $overrides = []): ConfigSnapshot
     {
         $this->manifestValidator->validate($this->manifest->data());
-        $phaseConfig = $this->manifest->resolvePhaseConfig($pipeline, $phase);
-        if ($phaseConfig === null) {
+        $phaseKeys = $this->manifest->resolvePhaseKeys($pipeline, $phase);
+        if ($phaseKeys === null) {
             throw new \RuntimeException("Unbekannte Pipeline/Phase: {$pipeline}/{$phase}");
         }
 
@@ -95,21 +95,17 @@ final class ConfigCompiler
         string $phase,
         ConfigSnapshot $snapshot
     ): ConfigSnapshot {
-        $phaseConfig = $this->manifest->resolvePhaseConfig($pipeline, $phase);
-        if ($phaseConfig === null) {
+        $phaseKeys = $this->manifest->resolvePhaseKeys($pipeline, $phase);
+        if ($phaseKeys === null) {
             return $snapshot;
         }
 
-        $allowed = $this->manifest->expandAllowed($phaseConfig['allowed'] ?? []);
-        $required = $this->manifest->expandRequired($phaseConfig['required'] ?? []);
-        $policyKeys = $this->manifest->variableKeys();
-        $keys = array_merge($allowed, $required, $policyKeys);
-
+        $allowed = array_flip(array_merge($phaseKeys, $this->manifest->variableKeys()));
         $values = [];
         $sources = [];
         foreach ($snapshot->values() as $key => $value) {
             $source = $snapshot->sources()[$key] ?? '';
-            if ($this->shouldKeep($key, $source, $keys)) {
+            if ($this->shouldKeep($key, $source, $allowed)) {
                 $values[$key] = $value;
                 $sources[$key] = $source;
             }
@@ -123,44 +119,25 @@ final class ConfigCompiler
         if ($source !== 'system') {
             return true;
         }
-        return $this->isAllowed($key, $allowed);
+        return isset($allowed[$key]);
     }
 
     private function filterAllowed(string $pipeline, string $phase, array $values): array
     {
-        $phaseConfig = $this->manifest->resolvePhaseConfig($pipeline, $phase);
-        if ($phaseConfig === null) {
+        $phaseKeys = $this->manifest->resolvePhaseKeys($pipeline, $phase);
+        if ($phaseKeys === null) {
             return [];
         }
 
-        $allowed = $this->manifest->expandAllowed($phaseConfig['allowed'] ?? []);
+        $allowed = array_flip($phaseKeys);
         $filtered = [];
         foreach ($values as $key => $value) {
-            if ($this->isAllowed($key, $allowed)) {
+            if (isset($allowed[$key])) {
                 $filtered[$key] = $value;
             }
         }
 
         return $filtered;
-    }
-
-    private function isAllowed(string $key, array $allowed): bool
-    {
-        foreach ($allowed as $rule) {
-            if (!is_string($rule)) {
-                continue;
-            }
-            if ($rule === $key) {
-                return true;
-            }
-            if (str_ends_with($rule, '*')) {
-                $prefix = substr($rule, 0, -1);
-                if (str_starts_with($key, $prefix)) {
-                    return true;
-                }
-            }
-        }
-        return false;
     }
 
     private function resolveTargetPath(?string $targetPath): string

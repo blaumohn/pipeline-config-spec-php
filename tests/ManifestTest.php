@@ -16,22 +16,57 @@ final class ManifestTest extends TestCase
         $this->writeManifest($root, $this->manifestData());
 
         $manifest = new Manifest($root);
-        $phaseConfig = $manifest->resolvePhaseConfig('dev', 'build');
-        $allowed = $manifest->expandAllowed($phaseConfig['allowed'] ?? []);
+        $keys = $manifest->resolvePhaseKeys('dev', 'build');
 
-        self::assertContains('APP_URL', $allowed);
+        self::assertContains('APP_URL', $keys);
     }
 
-    public function testRequiredFiltersWildcards(): void
+    public function testReturnsNullForUnknownPhase(): void
     {
         $root = $this->createRoot();
         $this->writeManifest($root, $this->manifestData());
 
         $manifest = new Manifest($root);
-        $phaseConfig = $manifest->resolvePhaseConfig('dev', 'runtime');
-        $required = $manifest->expandRequired($phaseConfig['required'] ?? []);
 
-        self::assertNotContains('APP_*', $required);
+        self::assertNull($manifest->resolvePhaseKeys('dev', 'unknown'));
+    }
+
+    public function testDisjointPassesWhenNoOverlap(): void
+    {
+        $root = $this->createRoot();
+        $this->writeManifest($root, $this->manifestData());
+
+        $manifest = new Manifest($root);
+        $errors = $manifest->checkDisjoint('dev', 'build');
+
+        self::assertSame([], $errors);
+    }
+
+    public function testDisjointFailsOnOverlap(): void
+    {
+        $root = $this->createRoot();
+        $this->writeManifest($root, [
+            'variables' => [
+                'app' => [
+                    'APP_URL' => [],
+                    'APP_ENV' => [],
+                ],
+            ],
+            'pipelines' => [
+                'common' => [
+                    'build' => ['APP_URL'],
+                ],
+                'dev' => [
+                    'build' => ['APP_URL'],
+                ],
+            ],
+        ]);
+
+        $manifest = new Manifest($root);
+        $errors = $manifest->checkDisjoint('dev', 'build');
+
+        self::assertNotEmpty($errors);
+        self::assertStringContainsString('APP_URL', $errors[0]);
     }
 
     private function createRoot(): string
@@ -66,20 +101,10 @@ final class ManifestTest extends TestCase
             ],
             'pipelines' => [
                 'common' => [
-                    'build' => [
-                        'required' => ['APP_URL'],
-                        'allowed' => ['app'],
-                    ],
-                    'runtime' => [
-                        'required' => ['APP_*'],
-                        'allowed' => ['app'],
-                    ],
+                    'build' => ['app'],
                 ],
                 'dev' => [
-                    'build' => [
-                        'required' => [],
-                        'allowed' => [],
-                    ],
+                    'build' => [],
                 ],
             ],
         ];

@@ -39,30 +39,39 @@ final class Manifest
         return is_array($variables) ? $variables : [];
     }
 
-    public function resolvePhaseConfig(string $pipeline, string $phase): ?array
+    public function resolvePhaseKeys(string $pipeline, string $phase): ?array
     {
         $pipelines = $this->data['pipelines'] ?? [];
         if (!is_array($pipelines)) {
             return null;
         }
-        $common = $this->pipelinePhase($pipelines['common'] ?? null, $phase);
-        $specific = $this->pipelinePhase($pipelines[$pipeline] ?? null, $phase);
+        $common = $this->phaseList($pipelines['common'] ?? null, $phase);
+        $specific = $this->phaseList($pipelines[$pipeline] ?? null, $phase);
         if ($common === null && $specific === null) {
             return null;
         }
-        return $this->mergePhaseConfig($common, $specific);
+        $commonKeys = $common !== null ? $this->expandRules($common) : [];
+        $specificKeys = $specific !== null ? $this->expandRules($specific) : [];
+        $merged = array_merge($commonKeys, $specificKeys);
+        return array_values(array_unique($merged));
     }
 
-    public function expandAllowed(array $allowed): array
+    public function checkDisjoint(string $pipeline, string $phase): array
     {
-        return $this->expandRules($allowed);
-    }
-
-    public function expandRequired(array $required): array
-    {
-        $expanded = $this->expandRules($required);
-        $filtered = array_filter($expanded, fn (string $rule) => !str_contains($rule, '*'));
-        return array_values($filtered);
+        $pipelines = $this->data['pipelines'] ?? [];
+        $common = $this->phaseList($pipelines['common'] ?? null, $phase);
+        $specific = $this->phaseList($pipelines[$pipeline] ?? null, $phase);
+        if ($common === null || $specific === null) {
+            return [];
+        }
+        $commonKeys = $this->expandRules($common);
+        $specificKeys = $this->expandRules($specific);
+        $overlap = array_intersect($commonKeys, $specificKeys);
+        $errors = [];
+        foreach (array_values($overlap) as $key) {
+            $errors[] = "Disjunktheitsverletzung: {$key} in common.{$phase} und {$pipeline}.{$phase}";
+        }
+        return $errors;
     }
 
     public function sourcesForKey(string $key): array
@@ -81,34 +90,16 @@ final class Manifest
         return array_values(array_unique($keys));
     }
 
-    private function mergePhaseConfig(?array $base, ?array $override): array
-    {
-        $base = is_array($base) ? $base : [];
-        $override = is_array($override) ? $override : [];
-        return [
-            'required' => $this->mergeList($base['required'] ?? [], $override['required'] ?? []),
-            'allowed' => $this->mergeList($base['allowed'] ?? [], $override['allowed'] ?? []),
-        ];
-    }
-
-    private function mergeList(array $left, array $right): array
-    {
-        $merged = [];
-        foreach (array_merge($left, $right) as $value) {
-            if (is_string($value) && $value !== '') {
-                $merged[] = $value;
-            }
-        }
-        return array_values(array_unique($merged));
-    }
-
-    private function pipelinePhase(?array $pipeline, string $phase): ?array
+    private function phaseList(?array $pipeline, string $phase): ?array
     {
         if (!is_array($pipeline)) {
             return null;
         }
-        $phaseConfig = $pipeline[$phase] ?? null;
-        return is_array($phaseConfig) ? $phaseConfig : null;
+        $list = $pipeline[$phase] ?? null;
+        if (!is_array($list)) {
+            return null;
+        }
+        return $list;
     }
 
     private function expandRules(array $rules): array
