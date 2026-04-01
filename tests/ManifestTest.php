@@ -10,7 +10,7 @@ use Symfony\Component\Yaml\Yaml;
 
 final class ManifestTest extends TestCase
 {
-    public function testExpandsGroups(): void
+    public function testExpandsFullGroup(): void
     {
         $root = $this->createRoot();
         $this->writeManifest($root, $this->manifestData());
@@ -19,6 +19,31 @@ final class ManifestTest extends TestCase
         $keys = $manifest->resolvePhaseKeys('dev', 'build');
 
         self::assertContains('APP_URL', $keys);
+        self::assertContains('APP_ENV', $keys);
+    }
+
+    public function testExpandsPartialGroup(): void
+    {
+        $root = $this->createRoot();
+        $this->writeManifest($root, [
+            'variables' => [
+                'app' => [
+                    'APP_URL' => [],
+                    'APP_ENV' => [],
+                ],
+            ],
+            'pipelines' => [
+                'common' => [
+                    'build' => ['app' => ['APP_URL']],
+                ],
+            ],
+        ]);
+
+        $manifest = new Manifest($root);
+        $keys = $manifest->resolvePhaseKeys('common', 'build');
+
+        self::assertContains('APP_URL', $keys);
+        self::assertNotContains('APP_ENV', $keys);
     }
 
     public function testReturnsNullForUnknownPhase(): void
@@ -54,10 +79,10 @@ final class ManifestTest extends TestCase
             ],
             'pipelines' => [
                 'common' => [
-                    'build' => ['APP_URL'],
+                    'build' => ['app' => ['APP_URL']],
                 ],
                 'dev' => [
-                    'build' => ['APP_URL'],
+                    'build' => ['app' => ['APP_URL']],
                 ],
             ],
         ]);
@@ -101,7 +126,7 @@ final class ManifestTest extends TestCase
             ],
             'pipelines' => [
                 'common' => [
-                    'build' => ['app'],
+                    'build' => ['app' => '*'],
                 ],
                 'dev' => [
                     'build' => [],

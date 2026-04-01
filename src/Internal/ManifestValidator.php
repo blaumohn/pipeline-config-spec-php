@@ -42,7 +42,7 @@ final class ManifestValidator
                     ->arrayPrototype()
                         ->useAttributeAsKey('phase')
                         ->arrayPrototype()
-                            ->scalarPrototype()->end()
+                            ->variablePrototype()->end()
                         ->end()
                     ->end()
                 ->end()

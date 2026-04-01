@@ -69,7 +69,10 @@ final class ConfigPolicyTest extends TestCase
             ],
             'pipelines' => [
                 'common' => [
-                    'runtime' => ['PIPELINE', 'PHASE', 'SMTP_PASS'],
+                    'runtime' => [
+                        'context' => '*',
+                        'mail' => ['SMTP_PASS'],
+                    ],
                 ],
             ],
         ]);
@@ -122,7 +125,7 @@ final class ConfigPolicyTest extends TestCase
             ],
             'pipelines' => [
                 'common' => [
-                    'runtime' => ['PIPELINE', 'PHASE'],
+                    'runtime' => ['context' => '*'],
                 ],
             ],
         ];

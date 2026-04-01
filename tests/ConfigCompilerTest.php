@@ -54,7 +54,10 @@ final class ConfigCompilerTest extends TestCase
             ],
             'pipelines' => [
                 'common' => [
-                    'runtime' => ['PIPELINE', 'PHASE', 'IP_SALT'],
+                    'runtime' => [
+                        'context' => '*',
+                        'security' => ['IP_SALT'],
+                    ],
                 ],
             ],
         ]);
@@ -113,7 +116,10 @@ final class ConfigCompilerTest extends TestCase
             ],
             'pipelines' => [
                 'common' => [
-                    'runtime' => ['PIPELINE', 'PHASE', 'APP_URL'],
+                    'runtime' => [
+                        'context' => '*',
+                        'app' => '*',
+                    ],
                 ],
             ],
         ];

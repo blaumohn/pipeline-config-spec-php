@@ -106,15 +106,20 @@ final class Manifest
     {
         $groups = $this->variableGroups();
         $expanded = [];
-        foreach ($rules as $rule) {
-            if (!is_string($rule) || $rule === '') {
+        foreach ($rules as $name => $value) {
+            if (!is_string($name) || $name === '') {
                 continue;
             }
-            if (array_key_exists($rule, $groups)) {
-                $expanded = array_merge($expanded, $groups[$rule]);
-                continue;
+            if ($value === '*') {
+                $groupKeys = $groups[$name] ?? null;
+                $expanded = array_merge($expanded, $groupKeys ?? [$name]);
+            } elseif (is_array($value)) {
+                foreach ($value as $key) {
+                    if (is_string($key) && $key !== '') {
+                        $expanded[] = $key;
+                    }
+                }
             }
-            $expanded[] = $rule;
         }
         return array_values(array_unique($expanded));
     }
