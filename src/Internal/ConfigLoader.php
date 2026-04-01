@@ -31,7 +31,7 @@ final class ConfigLoader
             }
             $parsed = Yaml::parseFile($file);
             $data = $this->assertMapping($parsed, $file);
-            foreach ($data as $key => $value) {
+            foreach ($this->flattenGroups($data) as $key => $value) {
                 if (!is_string($key)) {
                     continue;
                 }
@@ -109,6 +109,23 @@ final class ConfigLoader
             $replaced = str_replace('{' . $key . '}', $value, $replaced);
         }
         return $replaced;
+    }
+
+    private function flattenGroups(array $data): array
+    {
+        $flat = [];
+        foreach ($data as $key => $value) {
+            if (is_array($value)) {
+                foreach ($value as $subKey => $subValue) {
+                    if (is_string($subKey)) {
+                        $flat[$subKey] = $subValue;
+                    }
+                }
+            } else {
+                $flat[$key] = $value;
+            }
+        }
+        return $flat;
     }
 
     private function assertMapping(mixed $data, string $file): array
