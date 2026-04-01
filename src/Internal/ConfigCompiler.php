@@ -49,10 +49,7 @@ final class ConfigCompiler
             throw new \RuntimeException("Unbekannte Pipeline/Phase: {$pipeline}/{$phase}");
         }
 
-        $baseOverrides = [
-            'PIPELINE' => $pipeline,
-            'PHASE' => $phase,
-        ];
+        $baseOverrides = ['PIPELINE' => $pipeline, 'PHASE' => $phase];
         $cliOverrides = array_merge($baseOverrides, $overrides);
         $systemKeys = $this->manifest->variableKeys();
         $fileLayer = $this->loader->load($pipeline, $phase);
@@ -60,7 +57,8 @@ final class ConfigCompiler
         $cliLayer = $this->loader->loadOverrides($cliOverrides);
         $snapshot = $this->mergeLayers([$fileLayer, $systemLayer, $cliLayer]);
         $snapshot = $this->filterSnapshot($pipeline, $phase, $snapshot);
-        $errors = $this->policy->validate($this->manifest, $pipeline, $phase, $snapshot);
+        $validationSnapshot = $this->withoutKeys($snapshot, $this->baseKeys());
+        $errors = $this->policy->validate($this->manifest, $pipeline, $phase, $validationSnapshot);
         if ($errors !== []) {
             $message = "Config-Validierung fehlgeschlagen:\n- " . implode("\n- ", $errors);
             throw new \RuntimeException($message);
@@ -122,6 +120,19 @@ final class ConfigCompiler
         return isset($allowed[$key]);
     }
 
+    private function baseKeys(): array
+    {
+        return ['PIPELINE', 'PHASE'];
+    }
+
+    private function withoutKeys(ConfigSnapshot $snapshot, array $keys): ConfigSnapshot
+    {
+        $exclude = array_flip($keys);
+        $values = array_diff_key($snapshot->values(), $exclude);
+        $sources = array_diff_key($snapshot->sources(), $exclude);
+        return new ConfigSnapshot($values, $sources, $snapshot->loadedFiles());
+    }
+
     private function filterAllowed(string $pipeline, string $phase, array $values): array
     {
         $phaseKeys = $this->manifest->resolvePhaseKeys($pipeline, $phase);
@@ -129,7 +140,7 @@ final class ConfigCompiler
             return [];
         }
 
-        $allowed = array_flip($phaseKeys);
+        $allowed = array_flip(array_merge($phaseKeys, $this->baseKeys()));
         $filtered = [];
         foreach ($values as $key => $value) {
             if (isset($allowed[$key])) {

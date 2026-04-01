@@ -20,11 +20,9 @@ final class ConfigPolicyTest extends TestCase
         $policy = new ConfigPolicy();
         $manifest = new Manifest($root);
         $snapshot = new ConfigSnapshot([
-            'PIPELINE' => 'dev',
-            'PHASE' => 'runtime',
+            'APP_URL' => 'https://example.test',
         ], [
-            'PIPELINE' => 'cli',
-            'PHASE' => 'cli',
+            'APP_URL' => 'file',
         ], []);
 
         $errors = $policy->validate($manifest, 'dev', 'runtime', $snapshot);
@@ -39,13 +37,11 @@ final class ConfigPolicyTest extends TestCase
         $policy = new ConfigPolicy();
         $manifest = new Manifest($root);
         $snapshot = new ConfigSnapshot([
-            'PIPELINE' => 'dev',
-            'PHASE' => 'runtime',
+            'APP_URL' => 'https://example.test',
             'EXTRA' => 'x',
         ], [
-            'PIPELINE' => 'cli',
-            'PHASE' => 'cli',
-            'EXTRA' => 'cli',
+            'APP_URL' => 'file',
+            'EXTRA' => 'file',
         ], []);
 
         $errors = $policy->validate($manifest, 'dev', 'runtime', $snapshot);
@@ -57,10 +53,6 @@ final class ConfigPolicyTest extends TestCase
         $root = $this->createRoot();
         $this->writeManifest($root, [
             'variables' => [
-                'context' => [
-                    'PIPELINE' => [],
-                    'PHASE' => [],
-                ],
                 'mail' => [
                     'SMTP_PASS' => [
                         'sources' => ['local'],
@@ -70,7 +62,6 @@ final class ConfigPolicyTest extends TestCase
             'pipelines' => [
                 'common' => [
                     'runtime' => [
-                        'context' => '*',
                         'mail' => ['SMTP_PASS'],
                     ],
                 ],
@@ -80,12 +71,8 @@ final class ConfigPolicyTest extends TestCase
         $policy = new ConfigPolicy();
         $manifest = new Manifest($root);
         $snapshot = new ConfigSnapshot([
-            'PIPELINE' => 'dev',
-            'PHASE' => 'runtime',
             'SMTP_PASS' => 'secret',
         ], [
-            'PIPELINE' => 'cli',
-            'PHASE' => 'cli',
             'SMTP_PASS' => 'system',
         ], []);
 
@@ -118,14 +105,13 @@ final class ConfigPolicyTest extends TestCase
     {
         return [
             'variables' => [
-                'context' => [
-                    'PIPELINE' => [],
-                    'PHASE' => [],
+                'app' => [
+                    'APP_URL' => [],
                 ],
             ],
             'pipelines' => [
                 'common' => [
-                    'runtime' => ['context' => '*'],
+                    'runtime' => ['app' => '*'],
                 ],
             ],
         ];
