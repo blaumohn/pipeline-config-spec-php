@@ -23,33 +23,38 @@ Es umfasst YAML-Laden, Manifest-Validierung und Policy-Pruefungen.
 ```yaml
 variables:
   app:
-    APP_URL: {}
-    APP_ENV: {}
-  secrets:
-    IP_SALT:
+    APP_URL:
+      meta:
+        desc: "Basis-URL der Anwendung"
+        example: "https://example.invalid"
+  mail:
+    SMTP_PASS:
       sources: [system, local]
 
 pipelines:
   common:
     runtime:
-      required: [PIPELINE, PHASE, APP_ENV, IP_SALT]
-      allowed: [app, secrets]
+      app:
+        - APP_URL
+      mail:
+        - SMTP_PASS
   dev:
-    runtime:
-      required: []
-      allowed: []
+    runtime: {}
 ```
 
 - `variables` gruppiert Keys und optionale `sources`-Regeln.
-- `pipelines` definiert `allowed`/`required` pro Phase.
-- `allowed` akzeptiert Gruppennamen oder einzelne Keys (Wildcards erlaubt).
+- `pipelines` definiert pro Phase direkte Gruppen-Referenzen.
+- Phasenregeln nutzen `pipelines.<pipeline>.<phase>.<group>`.
+- Ein Gruppenwert ist entweder `*` oder eine explizite Schlüssel-Liste.
+- `PIPELINE` und `PHASE` werden lib-intern ergänzt und stehen nicht im
+  App-Manifest.
 
 ## API (sprachunabhaengig)
 
 - **Inputs**: `pipeline`, `phase`
 - **YAML-Loader**: laedt kontextbezogene Config-Dateien
 - **Manifest**: expandiert Gruppen/Wildcards
-- **Policy**: prueft allowed/required und sources
+- **Policy**: prueft Phasenregeln, Disjunktheit und sources
 - **Compiler**: erzeugt ein validiertes Config-Snapshot
 
 ## PHP-Beispiel

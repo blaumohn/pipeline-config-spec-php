@@ -23,33 +23,38 @@ It includes a YAML loader, manifest validation, and runtime policy checks.
 ```yaml
 variables:
   app:
-    APP_URL: {}
-    APP_ENV: {}
-  secrets:
-    IP_SALT:
+    APP_URL:
+      meta:
+        desc: "Base URL of the application"
+        example: "https://example.invalid"
+  mail:
+    SMTP_PASS:
       sources: [system, local]
 
 pipelines:
   common:
     runtime:
-      required: [PIPELINE, PHASE, APP_ENV, IP_SALT]
-      allowed: [app, secrets]
+      app:
+        - APP_URL
+      mail:
+        - SMTP_PASS
   dev:
-    runtime:
-      required: []
-      allowed: []
+    runtime: {}
 ```
 
 - `variables` groups keys and optional `sources` policies.
-- `pipelines` defines `allowed`/`required` per phase.
-- `allowed` accepts group names or literal keys (wildcards allowed).
+- `pipelines` defines direct group references per phase.
+- Phase rules use `pipelines.<pipeline>.<phase>.<group>`.
+- A group value is either `*` or an explicit key list.
+- `PIPELINE` and `PHASE` are injected internally by the library and do not
+  belong in the app manifest.
 
 ## API (language-agnostic)
 
 - **Inputs**: `pipeline`, `phase`
 - **YAML loader**: loads context-scoped config files
 - **Manifest**: parses and expands groups/wildcards
-- **Policy**: validates allowed/required and source rules
+- **Policy**: validates phase rules, disjointness, and source rules
 - **Compiler**: produces a validated config snapshot
 
 ## PHP usage
