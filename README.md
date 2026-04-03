@@ -38,8 +38,6 @@ pipelines:
         - APP_URL
       mail:
         - SMTP_PASS
-  dev:
-    runtime: {}
 ```
 
 - `variables` groups keys and optional `sources` policies.
