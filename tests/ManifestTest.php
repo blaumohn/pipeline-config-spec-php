@@ -10,7 +10,7 @@ use Symfony\Component\Yaml\Yaml;
 
 final class ManifestTest extends TestCase
 {
-    public function testExpandsFullGroup(): void
+    public function testExpandsSelectAllGroup(): void
     {
         $root = $this->createRoot();
         $this->writeManifest($root, $this->manifestData());
@@ -26,15 +26,25 @@ final class ManifestTest extends TestCase
     {
         $root = $this->createRoot();
         $this->writeManifest($root, [
-            'variables' => [
-                'app' => [
-                    'APP_URL' => [],
-                    'APP_ENV' => [],
+            'variable-groups' => [
+                [
+                    'key' => 'app',
+                    'variables' => [
+                        ['key' => 'APP_URL'],
+                        ['key' => 'APP_ENV'],
+                    ],
                 ],
             ],
             'pipelines' => [
                 'common' => [
-                    'build' => ['app' => ['APP_URL']],
+                    'build' => [
+                        [
+                            'group-key' => 'app',
+                            'variables' => [
+                                ['key' => 'APP_URL'],
+                            ],
+                        ],
+                    ],
                 ],
             ],
         ]);
@@ -52,7 +62,6 @@ final class ManifestTest extends TestCase
         $this->writeManifest($root, $this->manifestData());
 
         $manifest = new Manifest($root);
-
         self::assertNull($manifest->resolvePhaseKeys('dev', 'unknown'));
     }
 
@@ -71,18 +80,35 @@ final class ManifestTest extends TestCase
     {
         $root = $this->createRoot();
         $this->writeManifest($root, [
-            'variables' => [
-                'app' => [
-                    'APP_URL' => [],
-                    'APP_ENV' => [],
+            'variable-groups' => [
+                [
+                    'key' => 'app',
+                    'variables' => [
+                        ['key' => 'APP_URL'],
+                        ['key' => 'APP_ENV'],
+                    ],
                 ],
             ],
             'pipelines' => [
                 'common' => [
-                    'build' => ['app' => ['APP_URL']],
+                    'build' => [
+                        [
+                            'group-key' => 'app',
+                            'variables' => [
+                                ['key' => 'APP_URL'],
+                            ],
+                        ],
+                    ],
                 ],
                 'dev' => [
-                    'build' => ['app' => ['APP_URL']],
+                    'build' => [
+                        [
+                            'group-key' => 'app',
+                            'variables' => [
+                                ['key' => 'APP_URL'],
+                            ],
+                        ],
+                    ],
                 ],
             ],
         ]);
@@ -94,9 +120,73 @@ final class ManifestTest extends TestCase
         self::assertStringContainsString('APP_URL', $errors[0]);
     }
 
+    public function testUnknownGroupFails(): void
+    {
+        $this->expectException(\RuntimeException::class);
+        $this->expectExceptionMessage('Unbekannter group-key: missing');
+
+        $root = $this->createRoot();
+        $this->writeManifest($root, [
+            'variable-groups' => [
+                [
+                    'key' => 'app',
+                    'variables' => [
+                        ['key' => 'APP_URL'],
+                    ],
+                ],
+            ],
+            'pipelines' => [
+                'common' => [
+                    'build' => [
+                        [
+                            'group-key' => 'missing',
+                            'select' => '*',
+                        ],
+                    ],
+                ],
+            ],
+        ]);
+
+        $manifest = new Manifest($root);
+        $manifest->resolvePhaseKeys('common', 'build');
+    }
+
+    public function testUnknownVariableFails(): void
+    {
+        $this->expectException(\RuntimeException::class);
+        $this->expectExceptionMessage('Unbekannter Variablen-key APP_ENV in group-key: app');
+
+        $root = $this->createRoot();
+        $this->writeManifest($root, [
+            'variable-groups' => [
+                [
+                    'key' => 'app',
+                    'variables' => [
+                        ['key' => 'APP_URL'],
+                    ],
+                ],
+            ],
+            'pipelines' => [
+                'common' => [
+                    'build' => [
+                        [
+                            'group-key' => 'app',
+                            'variables' => [
+                                ['key' => 'APP_ENV'],
+                            ],
+                        ],
+                    ],
+                ],
+            ],
+        ]);
+
+        $manifest = new Manifest($root);
+        $manifest->resolvePhaseKeys('common', 'build');
+    }
+
     private function createRoot(): string
     {
-        $root = rtrim(sys_get_temp_dir(), DIRECTORY_SEPARATOR) . '/config-pipeline-spec-' . uniqid('', true);
+        $root = '/tmp/config-pipeline-spec-' . uniqid('', true);
         if (!mkdir($root, 0775, true) && !is_dir($root)) {
             throw new \RuntimeException('Failed to create root directory.');
         }
@@ -118,15 +208,23 @@ final class ManifestTest extends TestCase
     private function manifestData(): array
     {
         return [
-            'variables' => [
-                'app' => [
-                    'APP_URL' => [],
-                    'APP_ENV' => [],
+            'variable-groups' => [
+                [
+                    'key' => 'app',
+                    'variables' => [
+                        ['key' => 'APP_URL'],
+                        ['key' => 'APP_ENV'],
+                    ],
                 ],
             ],
             'pipelines' => [
                 'common' => [
-                    'build' => ['app' => '*'],
+                    'build' => [
+                        [
+                            'group-key' => 'app',
+                            'select' => '*',
+                        ],
+                    ],
                 ],
                 'dev' => [
                     'build' => [],

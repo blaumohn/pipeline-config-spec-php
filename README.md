@@ -1,7 +1,7 @@
 # Config Pipeline Spec (PHP)
 
 This repository provides a PHP implementation of a pipeline/phase based config spec.
-It includes a YAML loader, manifest validation, and runtime policy checks.
+It includes a YAML loader, manifest validation, and config-source checks.
 
 ## Concepts
 
@@ -21,29 +21,35 @@ It includes a YAML loader, manifest validation, and runtime policy checks.
 `config/config.manifest.yaml`:
 
 ```yaml
-variables:
-  app:
-    APP_URL:
-      meta:
-        desc: "Base URL of the application"
-        example: "https://example.invalid"
-  mail:
-    SMTP_PASS:
-      sources: [system, local]
+variable-groups:
+  - key: app
+    variables:
+      - key: APP_URL
+        meta:
+          desc: "Base URL of the application"
+          example: "https://example.invalid"
+  - key: mail
+    variables:
+      - key: SMTP_PASS
+        sources: [system, local]
 
 pipelines:
   common:
     runtime:
-      app:
-        - APP_URL
-      mail:
-        - SMTP_PASS
+      - group-key: app
+        variables:
+          - key: APP_URL
+      - group-key: mail
+        select: "*"
 ```
 
-- `variables` groups keys and optional `sources` policies.
-- `pipelines` defines direct group references per phase.
-- Phase rules use `pipelines.<pipeline>.<phase>.<group>`.
-- A group value is either `*` or an explicit key list.
+- `variable-groups` defines groups, keys, `meta`, and optional `sources`.
+- `pipelines` defines group references per phase.
+- Phase rules use `pipelines.<pipeline>.<phase>[]`.
+- A phase entry references one group via `group-key`.
+- A phase entry uses either `select: "*"` for the whole group or
+  `variables` for an explicit subset.
+- `meta.notes` may document functional dependencies between variables.
 - `PIPELINE` and `PHASE` are injected internally by the library and do not
   belong in the app manifest.
 
@@ -51,8 +57,8 @@ pipelines:
 
 - **Inputs**: `pipeline`, `phase`
 - **YAML loader**: loads context-scoped config files
-- **Manifest**: parses and expands groups/wildcards
-- **Policy**: validates phase rules, disjointness, and source rules
+- **Manifest**: parses and expands group references
+- **Validation**: checks phase rules, disjointness, and sources
 - **Compiler**: produces a validated config snapshot
 
 ## PHP usage

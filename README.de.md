@@ -1,7 +1,7 @@
 # Config Pipeline Spec (PHP)
 
 Dieses Repository enthaelt eine PHP-Implementierung einer Pipeline/Phase-basierten Config-Spec.
-Es umfasst YAML-Laden, Manifest-Validierung und Policy-Pruefungen.
+Es umfasst YAML-Laden, Manifest-Validierung und Quellen-Pruefungen.
 
 ## Begriffe
 
@@ -21,31 +21,34 @@ Es umfasst YAML-Laden, Manifest-Validierung und Policy-Pruefungen.
 `config/config.manifest.yaml`:
 
 ```yaml
-variables:
-  app:
-    APP_URL:
-      meta:
-        desc: "Basis-URL der Anwendung"
-        example: "https://example.invalid"
-  mail:
-    SMTP_PASS:
-      sources: [system, local]
+variable-groups:
+  - key: app
+    variables:
+      - key: APP_URL
+        meta:
+          desc: "Basis-URL der Anwendung"
+          example: "https://example.invalid"
+  - key: mail
+    variables:
+      - key: SMTP_PASS
+        sources: [system, local]
 
 pipelines:
   common:
     runtime:
-      app:
-        - APP_URL
-      mail:
-        - SMTP_PASS
-  dev:
-    runtime: {}
+      - group-key: app
+        variables:
+          - key: APP_URL
+      - group-key: mail
+        select: "*"
 ```
 
-- `variables` gruppiert Keys und optionale `sources`-Regeln.
-- `pipelines` definiert pro Phase direkte Gruppen-Referenzen.
-- Phasenregeln nutzen `pipelines.<pipeline>.<phase>.<group>`.
-- Ein Gruppenwert ist entweder `*` oder eine explizite Schlüssel-Liste.
+- `variable-groups` gruppiert Keys, `meta` und optionale `sources`-Regeln.
+- `pipelines` definiert pro Phase Gruppen-Referenzen.
+- Phasenregeln nutzen `pipelines.<pipeline>.<phase>[]`.
+- Eine Gruppen-Referenz arbeitet entweder mit `select: "*"` fuer die ganze
+  Gruppe oder mit `variables` fuer eine explizite Teilmenge.
+- `meta.notes` kann fachliche Abhaengigkeiten zwischen Variablen dokumentieren.
 - `PIPELINE` und `PHASE` werden lib-intern ergänzt und stehen nicht im
   App-Manifest.
 
@@ -53,8 +56,8 @@ pipelines:
 
 - **Inputs**: `pipeline`, `phase`
 - **YAML-Loader**: laedt kontextbezogene Config-Dateien
-- **Manifest**: expandiert Gruppen/Wildcards
-- **Policy**: prueft Phasenregeln, Disjunktheit und sources
+- **Manifest**: expandiert Gruppen-Referenzen
+- **Validierung**: prueft Phasenregeln, Disjunktheit und sources
 - **Compiler**: erzeugt ein validiertes Config-Snapshot
 
 ## PHP-Beispiel

@@ -52,17 +52,26 @@ final class ConfigPolicyTest extends TestCase
     {
         $root = $this->createRoot();
         $this->writeManifest($root, [
-            'variables' => [
-                'mail' => [
-                    'SMTP_PASS' => [
-                        'sources' => ['local'],
+            'variable-groups' => [
+                [
+                    'key' => 'mail',
+                    'variables' => [
+                        [
+                            'key' => 'SMTP_PASS',
+                            'sources' => ['local'],
+                        ],
                     ],
                 ],
             ],
             'pipelines' => [
                 'common' => [
                     'runtime' => [
-                        'mail' => ['SMTP_PASS'],
+                        [
+                            'group-key' => 'mail',
+                            'variables' => [
+                                ['key' => 'SMTP_PASS'],
+                            ],
+                        ],
                     ],
                 ],
             ],
@@ -82,7 +91,7 @@ final class ConfigPolicyTest extends TestCase
 
     private function createRoot(): string
     {
-        $root = rtrim(sys_get_temp_dir(), DIRECTORY_SEPARATOR) . '/config-pipeline-spec-' . uniqid('', true);
+        $root = '/tmp/config-pipeline-spec-' . uniqid('', true);
         if (!mkdir($root, 0775, true) && !is_dir($root)) {
             throw new \RuntimeException('Failed to create root directory.');
         }
@@ -104,14 +113,22 @@ final class ConfigPolicyTest extends TestCase
     private function manifestData(): array
     {
         return [
-            'variables' => [
-                'app' => [
-                    'APP_URL' => [],
+            'variable-groups' => [
+                [
+                    'key' => 'app',
+                    'variables' => [
+                        ['key' => 'APP_URL'],
+                    ],
                 ],
             ],
             'pipelines' => [
                 'common' => [
-                    'runtime' => ['app' => '*'],
+                    'runtime' => [
+                        [
+                            'group-key' => 'app',
+                            'select' => '*',
+                        ],
+                    ],
                 ],
             ],
         ];

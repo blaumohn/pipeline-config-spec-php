@@ -41,21 +41,26 @@ final class ConfigCompilerTest extends TestCase
     {
         $root = $this->createRoot();
         $this->writeManifest($root, [
-            'variables' => [
-                'context' => [
-                    'PIPELINE' => [],
-                    'PHASE' => [],
-                ],
-                'security' => [
-                    'IP_SALT' => [
-                        'sources' => ['system'],
+            'variable-groups' => [
+                [
+                    'key' => 'security',
+                    'variables' => [
+                        [
+                            'key' => 'IP_SALT',
+                            'sources' => ['system'],
+                        ],
                     ],
                 ],
             ],
             'pipelines' => [
                 'common' => [
                     'runtime' => [
-                        'security' => ['IP_SALT'],
+                        [
+                            'group-key' => 'security',
+                            'variables' => [
+                                ['key' => 'IP_SALT'],
+                            ],
+                        ],
                     ],
                 ],
             ],
@@ -70,7 +75,7 @@ final class ConfigCompilerTest extends TestCase
 
     private function createRoot(): string
     {
-        $root = rtrim(sys_get_temp_dir(), DIRECTORY_SEPARATOR) . '/config-pipeline-spec-' . uniqid('', true);
+        $root = '/tmp/config-pipeline-spec-' . uniqid('', true);
         if (!mkdir($root, 0775, true) && !is_dir($root)) {
             throw new \RuntimeException('Failed to create root directory.');
         }
@@ -104,15 +109,21 @@ final class ConfigCompilerTest extends TestCase
     private function manifestData(): array
     {
         return [
-            'variables' => [
-                'app' => [
-                    'APP_URL' => [],
+            'variable-groups' => [
+                [
+                    'key' => 'app',
+                    'variables' => [
+                        ['key' => 'APP_URL'],
+                    ],
                 ],
             ],
             'pipelines' => [
                 'common' => [
                     'runtime' => [
-                        'app' => '*',
+                        [
+                            'group-key' => 'app',
+                            'select' => '*',
+                        ],
                     ],
                 ],
             ],
