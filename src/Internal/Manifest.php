@@ -33,14 +33,11 @@ final class Manifest
         return $this->data;
     }
 
-    public function resolvePhaseKeys(string $pipeline, string $phase): ?array
+    public function resolvePhaseKeys(string $pipeline, string $phase): array
     {
         $pipelines = $this->pipelines();
         $common = $this->phaseRules($pipelines['common'] ?? null, $phase);
         $specific = $this->phaseRules($pipelines[$pipeline] ?? null, $phase);
-        if ($common === null && $specific === null) {
-            return null;
-        }
 
         $commonKeys = $this->expandPhaseRules($common ?? []);
         $specificKeys = $this->expandPhaseRules($specific ?? []);

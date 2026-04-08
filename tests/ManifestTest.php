@@ -56,13 +56,13 @@ final class ManifestTest extends TestCase
         self::assertNotContains('APP_ENV', $keys);
     }
 
-    public function testReturnsNullForUnknownPhase(): void
+    public function testReturnsEmptyKeysForUnknownPhase(): void
     {
         $root = $this->createRoot();
         $this->writeManifest($root, $this->manifestData());
 
         $manifest = new Manifest($root);
-        self::assertNull($manifest->resolvePhaseKeys('dev', 'unknown'));
+        self::assertSame([], $manifest->resolvePhaseKeys('dev', 'unknown'));
     }
 
     public function testDisjointPassesWhenNoOverlap(): void

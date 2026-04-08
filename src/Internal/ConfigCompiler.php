@@ -45,9 +45,6 @@ final class ConfigCompiler
     {
         $this->manifestValidator->validate($this->manifest->data());
         $phaseKeys = $this->manifest->resolvePhaseKeys($pipeline, $phase);
-        if ($phaseKeys === null) {
-            throw new \RuntimeException("Unbekannte Pipeline/Phase: {$pipeline}/{$phase}");
-        }
 
         $baseOverrides = ['PIPELINE' => $pipeline, 'PHASE' => $phase];
         $cliOverrides = array_merge($baseOverrides, $overrides);
@@ -94,9 +91,6 @@ final class ConfigCompiler
         ConfigSnapshot $snapshot
     ): ConfigSnapshot {
         $phaseKeys = $this->manifest->resolvePhaseKeys($pipeline, $phase);
-        if ($phaseKeys === null) {
-            return $snapshot;
-        }
 
         $allowed = array_flip(array_merge($phaseKeys, $this->manifest->variableKeys()));
         $values = [];
@@ -136,9 +130,6 @@ final class ConfigCompiler
     private function filterAllowed(string $pipeline, string $phase, array $values): array
     {
         $phaseKeys = $this->manifest->resolvePhaseKeys($pipeline, $phase);
-        if ($phaseKeys === null) {
-            return [];
-        }
 
         $allowed = array_flip(array_merge($phaseKeys, $this->baseKeys()));
         $filtered = [];

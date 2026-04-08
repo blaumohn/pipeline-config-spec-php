@@ -14,9 +14,6 @@ final class ConfigPolicy
         ConfigSnapshot $snapshot
     ): array {
         $keys = $manifest->resolvePhaseKeys($pipeline, $phase);
-        if ($keys === null) {
-            return ["Unbekannte Pipeline/Phase: {$pipeline}/{$phase}"];
-        }
 
         return array_merge(
             $manifest->checkDisjoint($pipeline, $phase),

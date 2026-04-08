@@ -89,6 +89,38 @@ final class ConfigPolicyTest extends TestCase
         self::assertNotEmpty($errors);
     }
 
+    public function testEmptyPhaseWithoutManifestRulesPassesWhenSnapshotIsEmpty(): void
+    {
+        $root = $this->createRoot();
+        $this->writeManifest($root, [
+            'variable-groups' => [
+                [
+                    'key' => 'app',
+                    'variables' => [
+                        ['key' => 'APP_URL'],
+                    ],
+                ],
+            ],
+            'pipelines' => [
+                'common' => [
+                    'runtime' => [
+                        [
+                            'group-key' => 'app',
+                            'select' => '*',
+                        ],
+                    ],
+                ],
+            ],
+        ]);
+
+        $policy = new ConfigPolicy();
+        $manifest = new Manifest($root);
+        $snapshot = new ConfigSnapshot([], [], []);
+
+        $errors = $policy->validate($manifest, 'dev', 'setup', $snapshot);
+        self::assertSame([], $errors);
+    }
+
     private function createRoot(): string
     {
         $root = '/tmp/config-pipeline-spec-' . uniqid('', true);

@@ -73,6 +73,22 @@ final class ConfigCompilerTest extends TestCase
         self::assertSame('test-salt', $values['IP_SALT'] ?? null);
     }
 
+    public function testCompileAllowsEmptyPhaseWithoutManifestRules(): void
+    {
+        $root = $this->createRoot();
+        $this->writeManifest($root, $this->manifestData());
+        $this->writeYaml($root, 'config/dev-setup.yaml', "{}\n");
+
+        $compiler = new ConfigCompiler($root);
+        $targetPath = $root . '/out/config.php';
+        $path = $compiler->compile('dev', 'setup', $targetPath);
+        $values = $this->readConfig($path);
+
+        self::assertSame('dev', $values['PIPELINE'] ?? null);
+        self::assertSame('setup', $values['PHASE'] ?? null);
+        self::assertCount(2, $values);
+    }
+
     private function createRoot(): string
     {
         $root = '/tmp/config-pipeline-spec-' . uniqid('', true);
