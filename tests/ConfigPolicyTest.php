@@ -14,38 +14,36 @@ final class ConfigPolicyTest extends TestCase
 {
     public function testValidConfigPasses(): void
     {
-        $root = $this->createRoot();
-        $this->writeManifest($root, $this->manifestData());
-
-        $policy = new ConfigPolicy();
-        $manifest = new Manifest($root);
-        $snapshot = new ConfigSnapshot([
+        $errors = $this->validateSnapshot('dev', 'runtime', [
             'APP_URL' => 'https://example.test',
-        ], [
-            'APP_URL' => 'file',
-        ], []);
+        ]);
 
-        $errors = $policy->validate($manifest, 'dev', 'runtime', $snapshot);
         self::assertSame([], $errors);
     }
 
     public function testDisallowedKeyFails(): void
     {
-        $root = $this->createRoot();
-        $this->writeManifest($root, $this->manifestData());
-
-        $policy = new ConfigPolicy();
-        $manifest = new Manifest($root);
-        $snapshot = new ConfigSnapshot([
+        $errors = $this->validateSnapshot('dev', 'runtime', [
             'APP_URL' => 'https://example.test',
             'EXTRA' => 'x',
-        ], [
-            'APP_URL' => 'file',
-            'EXTRA' => 'file',
-        ], []);
+        ]);
 
-        $errors = $policy->validate($manifest, 'dev', 'runtime', $snapshot);
         self::assertNotEmpty($errors);
+        self::assertContains('Unexpected key: EXTRA', $errors);
+    }
+
+    public function testUnknownPipelineFails(): void
+    {
+        $errors = $this->validateSnapshot('deev', 'runtime', []);
+
+        self::assertSame(['Unbekannte Pipeline: deev'], $errors);
+    }
+
+    public function testUnknownPhaseFails(): void
+    {
+        $errors = $this->validateSnapshot('dev', 'setvp', []);
+
+        self::assertSame(['Unbekannte Phase: setvp'], $errors);
     }
 
     public function testSourceMismatchFails(): void
@@ -53,27 +51,19 @@ final class ConfigPolicyTest extends TestCase
         $root = $this->createRoot();
         $this->writeManifest($root, [
             'variable-groups' => [
-                [
-                    'key' => 'mail',
-                    'variables' => [
-                        [
-                            'key' => 'SMTP_PASS',
-                            'sources' => ['local'],
-                        ],
+                'mail' => [
+                    'SMTP_PASS' => [
+                        'sources' => ['local'],
                     ],
                 ],
             ],
-            'pipelines' => [
-                'common' => [
-                    'runtime' => [
-                        [
-                            'group-key' => 'mail',
-                            'variables' => [
-                                ['key' => 'SMTP_PASS'],
-                            ],
-                        ],
-                    ],
+            'phases' => [
+                'runtime' => [
+                    'mail' => ['SMTP_PASS'],
                 ],
+            ],
+            'pipelines' => [
+                'dev' => [],
             ],
         ]);
 
@@ -89,36 +79,24 @@ final class ConfigPolicyTest extends TestCase
         self::assertNotEmpty($errors);
     }
 
-    public function testEmptyPhaseWithoutManifestRulesPassesWhenSnapshotIsEmpty(): void
+    public function testEmptyPhasePassesWhenSnapshotIsEmpty(): void
+    {
+        $errors = $this->validateSnapshot('dev', 'setup', []);
+
+        self::assertSame([], $errors);
+    }
+
+    private function validateSnapshot(string $pipeline, string $phase, array $values): array
     {
         $root = $this->createRoot();
-        $this->writeManifest($root, [
-            'variable-groups' => [
-                [
-                    'key' => 'app',
-                    'variables' => [
-                        ['key' => 'APP_URL'],
-                    ],
-                ],
-            ],
-            'pipelines' => [
-                'common' => [
-                    'runtime' => [
-                        [
-                            'group-key' => 'app',
-                            'select' => '*',
-                        ],
-                    ],
-                ],
-            ],
-        ]);
+        $this->writeManifest($root, $this->manifestData());
 
         $policy = new ConfigPolicy();
         $manifest = new Manifest($root);
-        $snapshot = new ConfigSnapshot([], [], []);
+        $sources = array_fill_keys(array_keys($values), 'file');
+        $snapshot = new ConfigSnapshot($values, $sources, []);
 
-        $errors = $policy->validate($manifest, 'dev', 'setup', $snapshot);
-        self::assertSame([], $errors);
+        return $policy->validate($manifest, $pipeline, $phase, $snapshot);
     }
 
     private function createRoot(): string
@@ -146,22 +124,18 @@ final class ConfigPolicyTest extends TestCase
     {
         return [
             'variable-groups' => [
-                [
-                    'key' => 'app',
-                    'variables' => [
-                        ['key' => 'APP_URL'],
-                    ],
+                'app' => [
+                    'APP_URL' => [],
+                ],
+            ],
+            'phases' => [
+                'setup' => [],
+                'runtime' => [
+                    'app' => '*',
                 ],
             ],
             'pipelines' => [
-                'common' => [
-                    'runtime' => [
-                        [
-                            'group-key' => 'app',
-                            'select' => '*',
-                        ],
-                    ],
-                ],
+                'dev' => [],
             ],
         ];
     }

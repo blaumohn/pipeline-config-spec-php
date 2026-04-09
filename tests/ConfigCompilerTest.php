@@ -32,9 +32,31 @@ final class ConfigCompilerTest extends TestCase
         $this->seedYamlFiles($root);
         $this->writeYaml($root, 'config/common.yaml', "EXTRA: ignore\n");
 
+        $this->compileValues($root);
+    }
+
+    public function testCompileThrowsOnUnknownPipeline(): void
+    {
+        $this->expectException(\RuntimeException::class);
+        $this->expectExceptionMessage('Unbekannte Pipeline: deev');
+
+        $root = $this->createRoot();
+        $this->writeManifest($root, $this->manifestData());
+
         $compiler = new ConfigCompiler($root);
-        $targetPath = $root . '/out/config.php';
-        $compiler->compile('dev', 'runtime', $targetPath);
+        $compiler->compile('deev', 'runtime', $root . '/out/config.php');
+    }
+
+    public function testCompileThrowsOnUnknownPhase(): void
+    {
+        $this->expectException(\RuntimeException::class);
+        $this->expectExceptionMessage('Unbekannte Phase: setvp');
+
+        $root = $this->createRoot();
+        $this->writeManifest($root, $this->manifestData());
+
+        $compiler = new ConfigCompiler($root);
+        $compiler->compile('dev', 'setvp', $root . '/out/config.php');
     }
 
     public function testCompileReadsSystemValueWhenSourceAllowsIt(): void
@@ -42,27 +64,19 @@ final class ConfigCompilerTest extends TestCase
         $root = $this->createRoot();
         $this->writeManifest($root, [
             'variable-groups' => [
-                [
-                    'key' => 'security',
-                    'variables' => [
-                        [
-                            'key' => 'IP_SALT',
-                            'sources' => ['system'],
-                        ],
+                'security' => [
+                    'IP_SALT' => [
+                        'sources' => ['system'],
                     ],
                 ],
             ],
-            'pipelines' => [
-                'common' => [
-                    'runtime' => [
-                        [
-                            'group-key' => 'security',
-                            'variables' => [
-                                ['key' => 'IP_SALT'],
-                            ],
-                        ],
-                    ],
+            'phases' => [
+                'runtime' => [
+                    'security' => ['IP_SALT'],
                 ],
+            ],
+            'pipelines' => [
+                'dev' => [],
             ],
         ]);
         putenv('IP_SALT=test-salt');
@@ -73,11 +87,10 @@ final class ConfigCompilerTest extends TestCase
         self::assertSame('test-salt', $values['IP_SALT'] ?? null);
     }
 
-    public function testCompileAllowsEmptyPhaseWithoutManifestRules(): void
+    public function testCompileAllowsKnownEmptyPhase(): void
     {
         $root = $this->createRoot();
         $this->writeManifest($root, $this->manifestData());
-        $this->writeYaml($root, 'config/dev-setup.yaml', "{}\n");
 
         $compiler = new ConfigCompiler($root);
         $targetPath = $root . '/out/config.php';
@@ -87,6 +100,19 @@ final class ConfigCompilerTest extends TestCase
         self::assertSame('dev', $values['PIPELINE'] ?? null);
         self::assertSame('setup', $values['PHASE'] ?? null);
         self::assertCount(2, $values);
+    }
+
+    public function testCompileRejectsValuesInEmptyPhase(): void
+    {
+        $this->expectException(\RuntimeException::class);
+        $this->expectExceptionMessage('Unexpected key: APP_URL');
+
+        $root = $this->createRoot();
+        $this->writeManifest($root, $this->manifestData());
+        $this->writeYaml($root, 'config/dev-setup.yaml', "APP_URL: https://example.test\n");
+
+        $compiler = new ConfigCompiler($root);
+        $compiler->compile('dev', 'setup', $root . '/out/config.php');
     }
 
     private function createRoot(): string
@@ -126,22 +152,18 @@ final class ConfigCompilerTest extends TestCase
     {
         return [
             'variable-groups' => [
-                [
-                    'key' => 'app',
-                    'variables' => [
-                        ['key' => 'APP_URL'],
-                    ],
+                'app' => [
+                    'APP_URL' => [],
+                ],
+            ],
+            'phases' => [
+                'setup' => [],
+                'runtime' => [
+                    'app' => '*',
                 ],
             ],
             'pipelines' => [
-                'common' => [
-                    'runtime' => [
-                        [
-                            'group-key' => 'app',
-                            'select' => '*',
-                        ],
-                    ],
-                ],
+                'dev' => [],
             ],
         ];
     }

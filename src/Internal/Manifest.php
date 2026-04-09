@@ -13,6 +13,7 @@ final class Manifest
     private array $data;
     private ?array $groupKeys = null;
     private ?array $variableSources = null;
+    private ?array $phaseRules = null;
 
     public function __construct(string $rootPath, string $configDir = 'config')
     {
@@ -35,22 +36,29 @@ final class Manifest
 
     public function resolvePhaseKeys(string $pipeline, string $phase): array
     {
-        $pipelines = $this->pipelines();
-        $common = $this->phaseRules($pipelines['common'] ?? null, $phase);
-        $specific = $this->phaseRules($pipelines[$pipeline] ?? null, $phase);
-
-        $commonKeys = $this->expandPhaseRules($common ?? []);
-        $specificKeys = $this->expandPhaseRules($specific ?? []);
+        $commonKeys = $this->expandPhaseRules($this->commonPhaseRules($phase));
+        $specificKeys = $this->expandPhaseRules($this->pipelinePhaseRules($pipeline, $phase));
         $merged = array_merge($commonKeys, $specificKeys);
         return array_values(array_unique($merged));
     }
 
+    public function contextErrors(string $pipeline, string $phase): array
+    {
+        $errors = [];
+        if (!$this->hasPipeline($pipeline)) {
+            $errors[] = "Unbekannte Pipeline: {$pipeline}";
+        }
+        if (!$this->hasPhase($phase)) {
+            $errors[] = "Unbekannte Phase: {$phase}";
+        }
+        return $errors;
+    }
+
     public function checkDisjoint(string $pipeline, string $phase): array
     {
-        $pipelines = $this->pipelines();
-        $common = $this->phaseRules($pipelines['common'] ?? null, $phase);
-        $specific = $this->phaseRules($pipelines[$pipeline] ?? null, $phase);
-        if ($common === null || $specific === null) {
+        $common = $this->commonPhaseRules($phase);
+        $specific = $this->pipelinePhaseRules($pipeline, $phase);
+        if ($common === [] || $specific === []) {
             return [];
         }
 
@@ -92,50 +100,67 @@ final class Manifest
         return is_array($groups) ? $groups : [];
     }
 
-    private function phaseRules(mixed $pipeline, string $phase): ?array
+    private function phasesData(): array
     {
-        if (!is_array($pipeline)) {
-            return null;
+        $phases = $this->data['phases'] ?? [];
+        return is_array($phases) ? $phases : [];
+    }
+
+    private function hasPipeline(string $pipeline): bool
+    {
+        if ($pipeline === 'common') {
+            return false;
         }
-        $rules = $pipeline[$phase] ?? null;
-        if (!is_array($rules)) {
-            return null;
+        return array_key_exists($pipeline, $this->pipelines());
+    }
+
+    private function hasPhase(string $phase): bool
+    {
+        return array_key_exists($phase, $this->phaseRules());
+    }
+
+    private function commonPhaseRules(string $phase): array
+    {
+        $rules = $this->phaseRules()[$phase] ?? [];
+        return is_array($rules) ? $rules : [];
+    }
+
+    private function pipelinePhaseRules(string $pipeline, string $phase): array
+    {
+        $pipelines = $this->pipelines();
+        $pipelineRules = $pipelines[$pipeline] ?? [];
+        if (!is_array($pipelineRules)) {
+            return [];
         }
-        return $rules;
+        $rules = $pipelineRules[$phase] ?? [];
+        return is_array($rules) ? $rules : [];
     }
 
     private function expandPhaseRules(array $rules): array
     {
         $groups = $this->variableGroups();
         $expanded = [];
-        foreach ($rules as $rule) {
-            $keys = $this->expandRule($rule, $groups);
+        foreach ($rules as $groupKey => $selector) {
+            $keys = $this->expandRule((string) $groupKey, $selector, $groups);
             $expanded = array_merge($expanded, $keys);
         }
         return array_values(array_unique($expanded));
     }
 
-    private function expandRule(mixed $rule, array $groups): array
+    private function expandRule(string $groupKey, mixed $selector, array $groups): array
     {
-        if (!is_array($rule)) {
-            return [];
-        }
-
-        $groupKey = $this->requireString($rule['group-key'] ?? null, 'group-key fehlt');
         $knownKeys = $groups[$groupKey] ?? null;
         if ($knownKeys === null) {
             throw new \RuntimeException("Unbekannter group-key: {$groupKey}");
         }
 
-        $selectAll = ($rule['select'] ?? null) === '*';
-        $variables = $rule['variables'] ?? null;
-        if ($selectAll) {
+        if ($selector === '*') {
             return $knownKeys;
         }
-        if (!is_array($variables)) {
+        if (!is_array($selector)) {
             throw new \RuntimeException("Variablenliste fehlt fuer group-key: {$groupKey}");
         }
-        return $this->expandVariables($groupKey, $variables, $knownKeys);
+        return $this->expandVariables($groupKey, $selector, $knownKeys);
     }
 
     private function expandVariables(string $groupKey, array $variables, array $knownKeys): array
@@ -143,10 +168,7 @@ final class Manifest
         $known = array_flip($knownKeys);
         $expanded = [];
         foreach ($variables as $entry) {
-            if (!is_array($entry)) {
-                continue;
-            }
-            $key = $this->requireString($entry['key'] ?? null, "Variablen-key fehlt in group-key: {$groupKey}");
+            $key = $this->requireString($entry, "Variablen-key fehlt in group-key: {$groupKey}");
             if (!isset($known[$key])) {
                 throw new \RuntimeException("Unbekannter Variablen-key {$key} in group-key: {$groupKey}");
             }
@@ -162,31 +184,24 @@ final class Manifest
         }
 
         $groups = [];
-        foreach ($this->variableGroupsData() as $group) {
-            if (!is_array($group)) {
-                continue;
-            }
-            $groupKey = $this->requireString($group['key'] ?? null, 'Gruppen-key fehlt');
-            $groups[$groupKey] = $this->collectVariableKeys($group);
+        foreach ($this->variableGroupsData() as $groupKey => $variables) {
+            $groupKey = $this->requireString($groupKey, 'Gruppen-key fehlt');
+            $groups[$groupKey] = $this->collectVariableKeys($variables);
         }
 
         $this->groupKeys = $groups;
         return $groups;
     }
 
-    private function collectVariableKeys(array $group): array
+    private function collectVariableKeys(mixed $variables): array
     {
-        $variables = $group['variables'] ?? [];
         if (!is_array($variables)) {
             return [];
         }
 
         $keys = [];
-        foreach ($variables as $entry) {
-            if (!is_array($entry)) {
-                continue;
-            }
-            $key = $this->requireString($entry['key'] ?? null, 'Variablen-key fehlt');
+        foreach ($variables as $key => $_entry) {
+            $key = $this->requireString($key, 'Variablen-key fehlt');
             $keys[] = $key;
         }
         return array_values(array_unique($keys));
@@ -199,12 +214,15 @@ final class Manifest
         }
 
         $sources = [];
-        foreach ($this->variableGroupsData() as $group) {
-            if (!is_array($group)) {
+        foreach ($this->variableGroupsData() as $variables) {
+            if (!is_array($variables)) {
                 continue;
             }
-            foreach ($this->variableEntries($group) as $entry) {
-                $key = $this->requireString($entry['key'] ?? null, 'Variablen-key fehlt');
+            foreach ($variables as $key => $entry) {
+                $key = $this->requireString($key, 'Variablen-key fehlt');
+                if (!is_array($entry)) {
+                    continue;
+                }
                 $value = $entry['sources'] ?? [];
                 if (is_array($value)) {
                     $sources[$key] = array_values(array_filter($value, 'is_string'));
@@ -216,10 +234,26 @@ final class Manifest
         return $sources;
     }
 
-    private function variableEntries(array $group): array
+    private function phaseRules(): array
     {
-        $variables = $group['variables'] ?? [];
-        return is_array($variables) ? $variables : [];
+        if ($this->phaseRules !== null) {
+            return $this->phaseRules;
+        }
+
+        $rules = [];
+        foreach ($this->phasesData() as $key => $phase) {
+            $key = $this->requireString($key, 'Phasen-key fehlt');
+            if ($phase === null) {
+                $phase = [];
+            }
+            if (!is_array($phase)) {
+                continue;
+            }
+            $rules[$key] = $phase;
+        }
+
+        $this->phaseRules = $rules;
+        return $rules;
     }
 
     private function requireString(mixed $value, string $message): string

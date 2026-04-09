@@ -44,6 +44,7 @@ final class ConfigCompiler
     public function resolve(string $pipeline, string $phase, array $overrides = []): ConfigSnapshot
     {
         $this->manifestValidator->validate($this->manifest->data());
+        $this->assertKnownContext($pipeline, $phase);
         $phaseKeys = $this->manifest->resolvePhaseKeys($pipeline, $phase);
 
         $baseOverrides = ['PIPELINE' => $pipeline, 'PHASE' => $phase];
@@ -67,6 +68,15 @@ final class ConfigCompiler
     public function validate(string $pipeline, string $phase, array $overrides = []): ConfigSnapshot
     {
         return $this->resolve($pipeline, $phase, $overrides);
+    }
+
+    private function assertKnownContext(string $pipeline, string $phase): void
+    {
+        $errors = $this->manifest->contextErrors($pipeline, $phase);
+        if ($errors === []) {
+            return;
+        }
+        throw new \RuntimeException("Config-Validierung fehlgeschlagen:\n- " . implode("\n- ", $errors));
     }
 
     private function mergeLayers(array $layers): ConfigSnapshot

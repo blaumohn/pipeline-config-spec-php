@@ -22,33 +22,33 @@ It includes a YAML loader, manifest validation, and config-source checks.
 
 ```yaml
 variable-groups:
-  - key: app
-    variables:
-      - key: APP_URL
-        meta:
-          desc: "Base URL of the application"
-          example: "https://example.invalid"
-  - key: mail
-    variables:
-      - key: SMTP_PASS
-        sources: [system, local]
+  app:
+    APP_URL:
+      meta:
+        desc: "Base URL of the application"
+        example: "https://example.invalid"
+  mail:
+    SMTP_PASS:
+      sources: [system, local]
+
+phases:
+  setup: {}
+
+  runtime:
+    app:
+      - APP_URL
+    mail: "*"
 
 pipelines:
-  common:
-    runtime:
-      - group-key: app
-        variables:
-          - key: APP_URL
-      - group-key: mail
-        select: "*"
+  dev: {}
 ```
 
 - `variable-groups` defines groups, keys, `meta`, and optional `sources`.
-- `pipelines` defines group references per phase.
-- Phase rules use `pipelines.<pipeline>.<phase>[]`.
-- A phase entry references one group via `group-key`.
-- A phase entry uses either `select: "*"` for the whole group or
-  `variables` for an explicit subset.
+- `phases` defines valid phase names and shared group references.
+- `pipelines` defines valid pipeline names and pipeline-specific additions.
+- A group reference uses `group: "*"` for the whole group or
+  `group: [KEY, ...]` for an explicit subset.
+- A known empty phase such as `setup` is valid without variables.
 - `meta.notes` may document functional dependencies between variables.
 - `PIPELINE` and `PHASE` are injected internally by the library and do not
   belong in the app manifest.

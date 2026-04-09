@@ -13,6 +13,11 @@ final class ConfigPolicy
         string $phase,
         ConfigSnapshot $snapshot
     ): array {
+        $contextErrors = $manifest->contextErrors($pipeline, $phase);
+        if ($contextErrors !== []) {
+            return $contextErrors;
+        }
+
         $keys = $manifest->resolvePhaseKeys($pipeline, $phase);
 
         return array_merge(
