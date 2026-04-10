@@ -1,7 +1,7 @@
 # Config Pipeline Spec (PHP)
 
-Dieses Repository enthaelt eine PHP-Implementierung einer Pipeline/Phase-basierten Config-Spec.
-Es umfasst YAML-Laden, Manifest-Validierung und Quellen-Pruefungen.
+Dieses Repository enthält eine PHP-Implementierung einer Pipeline/Phase-basierten Config-Spec.
+Es umfasst YAML-Laden, Manifest-Validierung und Quellen-Prüfungen.
 
 ## Begriffe
 
@@ -22,42 +22,45 @@ Es umfasst YAML-Laden, Manifest-Validierung und Quellen-Pruefungen.
 
 ```yaml
 variable-groups:
-  - key: app
-    variables:
-      - key: APP_URL
-        meta:
-          desc: "Basis-URL der Anwendung"
-          example: "https://example.invalid"
-  - key: mail
-    variables:
-      - key: SMTP_PASS
-        sources: [system, local]
+  app:
+    APP_URL:
+      meta:
+        desc: "Basis-URL der Anwendung"
+        example: "https://example.invalid"
+  mail:
+    SMTP_PASS:
+      sources: [system, local]
+
+phases:
+  setup: {}
+
+  runtime:
+    app:
+      - APP_URL
+    mail: "*"
 
 pipelines:
-  common:
-    runtime:
-      - group-key: app
-        variables:
-          - key: APP_URL
-      - group-key: mail
-        select: "*"
+  dev: {}
 ```
 
-- `variable-groups` gruppiert Keys, `meta` und optionale `sources`-Regeln.
-- `pipelines` definiert pro Phase Gruppen-Referenzen.
-- Phasenregeln nutzen `pipelines.<pipeline>.<phase>[]`.
-- Eine Gruppen-Referenz arbeitet entweder mit `select: "*"` fuer die ganze
-  Gruppe oder mit `variables` fuer eine explizite Teilmenge.
-- `meta.notes` kann fachliche Abhaengigkeiten zwischen Variablen dokumentieren.
+- `variable-groups` definiert Gruppen, Keys, `meta` und optionale
+  `sources`-Regeln.
+- `phases` definiert gültige Phasennamen und gemeinsame Gruppenreferenzen.
+- `pipelines` definiert gültige Pipeline-Namen und pipelinespezifische
+  Ergänzungen.
+- Eine Gruppenreferenz nutzt `gruppe: "*"` für die ganze Gruppe oder
+  `gruppe: [KEY, ...]` für eine explizite Teilmenge.
+- Eine bekannte leere Phase wie `setup` ist ohne Variablen gültig.
+- `meta.notes` kann fachliche Abhängigkeiten zwischen Variablen dokumentieren.
 - `PIPELINE` und `PHASE` werden lib-intern ergänzt und stehen nicht im
   App-Manifest.
 
-## API (sprachunabhaengig)
+## API (sprachunabhängig)
 
 - **Inputs**: `pipeline`, `phase`
-- **YAML-Loader**: laedt kontextbezogene Config-Dateien
+- **YAML-Loader**: lädt kontextbezogene Config-Dateien
 - **Manifest**: expandiert Gruppen-Referenzen
-- **Validierung**: prueft Phasenregeln, Disjunktheit und sources
+- **Validierung**: prüft Phasenregeln, Disjunktheit und sources
 - **Compiler**: erzeugt ein validiertes Config-Snapshot
 
 ## PHP-Beispiel
