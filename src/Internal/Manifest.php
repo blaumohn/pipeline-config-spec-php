@@ -42,7 +42,7 @@ final class Manifest
         return array_values(array_unique($merged));
     }
 
-    public function contextErrors(string $pipeline, string $phase): array
+    public function pipelinePhaseErrors(string $pipeline, string $phase): array
     {
         $errors = [];
         if (!$this->hasPipeline($pipeline)) {

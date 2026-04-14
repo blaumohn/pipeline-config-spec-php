@@ -13,9 +13,9 @@ final class ConfigPolicy
         string $phase,
         ConfigSnapshot $snapshot
     ): array {
-        $contextErrors = $manifest->contextErrors($pipeline, $phase);
-        if ($contextErrors !== []) {
-            return $contextErrors;
+        $pipelinePhaseErrors = $manifest->pipelinePhaseErrors($pipeline, $phase);
+        if ($pipelinePhaseErrors !== []) {
+            return $pipelinePhaseErrors;
         }
 
         $keys = $manifest->resolvePhaseKeys($pipeline, $phase);
@@ -41,10 +41,10 @@ final class ConfigPolicy
 
     private function validateUnexpected(array $keys, ConfigSnapshot $snapshot): array
     {
-        $allowed = array_flip($keys);
+        $expectedKeys = array_flip($keys);
         $errors = [];
         foreach ($snapshot->values() as $key => $_value) {
-            if (!isset($allowed[$key])) {
+            if (!isset($expectedKeys[$key])) {
                 $errors[] = "Unexpected key: {$key}";
             }
         }
@@ -54,18 +54,18 @@ final class ConfigPolicy
     private function validateSources(Manifest $manifest, ConfigSnapshot $snapshot): array
     {
         $errors = [];
-        $sources = $snapshot->sources();
+        $origins = $snapshot->origins();
         foreach ($snapshot->values() as $key => $_value) {
-            $policy = $manifest->sourcesForKey($key);
-            if ($policy === []) {
+            $allowedSources = $manifest->sourcesForKey($key);
+            if ($allowedSources === []) {
                 continue;
             }
-            $source = $this->normalizeSource($sources[$key] ?? '');
-            if (in_array($source, $policy, true)) {
+            $origin = $this->normalizeSource($origins[$key] ?? '');
+            if (in_array($origin, $allowedSources, true)) {
                 continue;
             }
-            $policyLabel = implode(', ', $policy);
-            $errors[] = "Variable in falscher Quelle: {$key} ({$source}, erlaubt: {$policyLabel})";
+            $policyLabel = implode(', ', $allowedSources);
+            $errors[] = "Variable in falscher Quelle: {$key} ({$origin}, erlaubt: {$policyLabel})";
         }
         return $errors;
     }

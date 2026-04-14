@@ -19,7 +19,7 @@ final class ConfigLoaderTest extends TestCase
 
         self::assertSame('second', $snapshot->values()['APP_ENV'] ?? null);
         self::assertSame('local', $snapshot->values()['LOCAL'] ?? null);
-        self::assertSame('runtime', $snapshot->values()['PHASE'] ?? null);
+        self::assertSame('https://example.test', $snapshot->values()['APP_URL'] ?? null);
     }
 
     public function testLoadsSystemLayerForRequestedKeys(): void
@@ -32,7 +32,7 @@ final class ConfigLoaderTest extends TestCase
         putenv('IP_SALT');
 
         self::assertSame('test-salt', $snapshot->values()['IP_SALT'] ?? null);
-        self::assertSame('system', $snapshot->sources()['IP_SALT'] ?? null);
+        self::assertSame('system', $snapshot->origins()['IP_SALT'] ?? null);
     }
 
     private function createRoot(): string
@@ -55,7 +55,7 @@ final class ConfigLoaderTest extends TestCase
         $this->writeYaml($root, 'config/common.yaml', "APP_ENV: first\n");
         $this->writeYaml($root, 'config/dev.yaml', "APP_ENV: second\n");
         $this->writeYaml($root, '.local/dev.yaml', "LOCAL: local\n");
-        $this->writeYaml($root, 'config/dev-runtime.yaml', "PHASE: runtime\n");
+        $this->writeYaml($root, 'config/dev-runtime.yaml', "APP_URL: https://example.test\n");
     }
 
     private function writeYaml(string $root, string $file, string $content): void

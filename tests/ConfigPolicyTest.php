@@ -21,7 +21,7 @@ final class ConfigPolicyTest extends TestCase
         self::assertSame([], $errors);
     }
 
-    public function testDisallowedKeyFails(): void
+    public function testUnexpectedKeyFails(): void
     {
         $errors = $this->validateSnapshot('dev', 'runtime', [
             'APP_URL' => 'https://example.test',
@@ -93,15 +93,15 @@ final class ConfigPolicyTest extends TestCase
 
         $policy = new ConfigPolicy();
         $manifest = new Manifest($root);
-        $sources = array_fill_keys(array_keys($values), 'file');
-        $snapshot = new ConfigSnapshot($values, $sources, []);
+        $origins = array_fill_keys(array_keys($values), 'file');
+        $snapshot = new ConfigSnapshot($values, $origins, []);
 
         return $policy->validate($manifest, $pipeline, $phase, $snapshot);
     }
 
     private function createRoot(): string
     {
-        $root = '/tmp/config-pipeline-spec-' . uniqid('', true);
+        $root = rtrim(sys_get_temp_dir(), DIRECTORY_SEPARATOR) . '/config-pipeline-spec-' . uniqid('', true);
         if (!mkdir($root, 0775, true) && !is_dir($root)) {
             throw new \RuntimeException('Failed to create root directory.');
         }

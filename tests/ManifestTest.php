@@ -55,14 +55,14 @@ final class ManifestTest extends TestCase
     {
         $manifest = $this->manifest($this->manifestData());
 
-        self::assertSame(['Unbekannte Phase: setvp'], $manifest->contextErrors('dev', 'setvp'));
+        self::assertSame(['Unbekannte Phase: setvp'], $manifest->pipelinePhaseErrors('dev', 'setvp'));
     }
 
     public function testReportsUnknownPipeline(): void
     {
         $manifest = $this->manifest($this->manifestData());
 
-        self::assertSame(['Unbekannte Pipeline: deev'], $manifest->contextErrors('deev', 'build'));
+        self::assertSame(['Unbekannte Pipeline: deev'], $manifest->pipelinePhaseErrors('deev', 'build'));
     }
 
     public function testDisjointPassesWhenNoOverlap(): void
@@ -158,7 +158,7 @@ final class ManifestTest extends TestCase
 
     private function createRoot(): string
     {
-        $root = '/tmp/config-pipeline-spec-' . uniqid('', true);
+        $root = rtrim(sys_get_temp_dir(), DIRECTORY_SEPARATOR) . '/config-pipeline-spec-' . uniqid('', true);
         if (!mkdir($root, 0775, true) && !is_dir($root)) {
             throw new \RuntimeException('Failed to create root directory.');
         }

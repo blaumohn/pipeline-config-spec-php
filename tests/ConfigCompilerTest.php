@@ -115,9 +115,37 @@ final class ConfigCompilerTest extends TestCase
         $compiler->compile('dev', 'setup', $root . '/out/config.php');
     }
 
+    public function testCompileRejectsOverrideThatIsNotVariableOfPipelinePhase(): void
+    {
+        $this->expectException(\RuntimeException::class);
+        $this->expectExceptionMessage('Unexpected key: PIPELINE');
+
+        $root = $this->createRoot();
+        $this->writeManifest($root, $this->manifestData());
+
+        $compiler = new ConfigCompiler($root);
+        $compiler->compile('dev', 'runtime', $root . '/out/config.php', [
+            'PIPELINE' => 'prod',
+        ]);
+    }
+
+    public function testCompileRejectsPhaseOverrideThatIsNotVariableOfPipelinePhase(): void
+    {
+        $this->expectException(\RuntimeException::class);
+        $this->expectExceptionMessage('Unexpected key: PHASE');
+
+        $root = $this->createRoot();
+        $this->writeManifest($root, $this->manifestData());
+
+        $compiler = new ConfigCompiler($root);
+        $compiler->compile('dev', 'runtime', $root . '/out/config.php', [
+            'PHASE' => 'build',
+        ]);
+    }
+
     private function createRoot(): string
     {
-        $root = '/tmp/config-pipeline-spec-' . uniqid('', true);
+        $root = rtrim(sys_get_temp_dir(), DIRECTORY_SEPARATOR) . '/config-pipeline-spec-' . uniqid('', true);
         if (!mkdir($root, 0775, true) && !is_dir($root)) {
             throw new \RuntimeException('Failed to create root directory.');
         }

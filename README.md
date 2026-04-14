@@ -7,6 +7,10 @@ It includes a YAML loader, manifest validation, and config-source checks.
 
 - **Pipeline**: project flow (e.g. `dev`, `smoketest`, `delivery`)
 - **Phase**: lifecycle step (e.g. `setup`, `build`, `runtime`, `deploy`)
+- **Pipeline phase**: the pair of `pipeline` and `phase`, for example
+  `dev/runtime`
+- **Config variable**: functional key within a pipeline phase, for example
+  `APP_URL`
 
 ## Config file order
 
@@ -50,16 +54,23 @@ pipelines:
   `group: [KEY, ...]` for an explicit subset.
 - A known empty phase such as `setup` is valid without variables.
 - `meta.notes` may document functional dependencies between variables.
-- `PIPELINE` and `PHASE` are injected internally by the library and do not
-  belong in the app manifest.
+- `PIPELINE` and `PHASE` are derived internally from the pipeline phase and do
+  not belong in the app manifest.
 
 ## API (language-agnostic)
 
 - **Inputs**: `pipeline`, `phase`
+- **Pipeline-phase validation**: `pipeline` must exist in `pipelines`,
+  `phase` must exist in `phases`
 - **YAML loader**: loads context-scoped config files
-- **Manifest**: parses and expands group references
-- **Validation**: checks phase rules, disjointness, and sources
+- **Manifest**: parses and expands group references for a valid pipeline phase
+- **Validation**: checks config variables of the valid pipeline phase,
+  disjointness, and `sources`
 - **Compiler**: produces a validated config snapshot
+
+CLI overrides are treated like regular config variables. An override is only
+valid when the key exists for the current pipeline phase and its `sources`
+allow the CLI origin.
 
 ## PHP usage
 

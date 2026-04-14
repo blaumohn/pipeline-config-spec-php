@@ -33,7 +33,7 @@ final class ConfigCompiler
         array $overrides = []
     ): string {
         $snapshot = $this->resolve($pipeline, $phase, $overrides);
-        $values = $this->filterAllowed($pipeline, $phase, $snapshot->values());
+        $values = $this->filterCompiledValues($pipeline, $phase, $snapshot->values());
 
         $targetPath = $this->resolveTargetPath($targetPath);
         $this->writeCompiled($targetPath, $values);
@@ -43,25 +43,9 @@ final class ConfigCompiler
 
     public function resolve(string $pipeline, string $phase, array $overrides = []): ConfigSnapshot
     {
-        $this->manifestValidator->validate($this->manifest->data());
-        $this->assertKnownContext($pipeline, $phase);
-        $phaseKeys = $this->manifest->resolvePhaseKeys($pipeline, $phase);
-
-        $baseOverrides = ['PIPELINE' => $pipeline, 'PHASE' => $phase];
-        $cliOverrides = array_merge($baseOverrides, $overrides);
-        $systemKeys = $this->manifest->variableKeys();
-        $fileLayer = $this->loader->load($pipeline, $phase);
-        $systemLayer = $this->loader->loadSystem($systemKeys);
-        $cliLayer = $this->loader->loadOverrides($cliOverrides);
-        $snapshot = $this->mergeLayers([$fileLayer, $systemLayer, $cliLayer]);
+        $snapshot = $this->buildSnapshot($pipeline, $phase, $overrides);
         $snapshot = $this->filterSnapshot($pipeline, $phase, $snapshot);
-        $validationSnapshot = $this->withoutKeys($snapshot, $this->baseKeys());
-        $errors = $this->policy->validate($this->manifest, $pipeline, $phase, $validationSnapshot);
-        if ($errors !== []) {
-            $message = "Config-Validierung fehlgeschlagen:\n- " . implode("\n- ", $errors);
-            throw new \RuntimeException($message);
-        }
-
+        $this->assertValidSnapshot($pipeline, $phase, $snapshot);
         return $snapshot;
     }
 
@@ -70,29 +54,45 @@ final class ConfigCompiler
         return $this->resolve($pipeline, $phase, $overrides);
     }
 
-    private function assertKnownContext(string $pipeline, string $phase): void
+    private function assertValidPipelinePhase(string $pipeline, string $phase): void
     {
-        $errors = $this->manifest->contextErrors($pipeline, $phase);
+        $errors = $this->manifest->pipelinePhaseErrors($pipeline, $phase);
         if ($errors === []) {
             return;
         }
         throw new \RuntimeException("Config-Validierung fehlgeschlagen:\n- " . implode("\n- ", $errors));
     }
 
+    private function buildSnapshot(
+        string $pipeline,
+        string $phase,
+        array $overrides
+    ): ConfigSnapshot {
+        $this->manifestValidator->validate($this->manifest->data());
+        $this->assertValidPipelinePhase($pipeline, $phase);
+
+        $systemKeys = $this->manifest->variableKeys();
+        $fileLayer = $this->loader->load($pipeline, $phase);
+        $systemLayer = $this->loader->loadSystem($systemKeys);
+        $cliLayer = $this->loader->loadOverrides($overrides);
+
+        return $this->mergeLayers([$fileLayer, $systemLayer, $cliLayer]);
+    }
+
     private function mergeLayers(array $layers): ConfigSnapshot
     {
         $values = [];
-        $sources = [];
+        $origins = [];
         $loadedFiles = [];
         foreach ($layers as $layer) {
             if (!$layer instanceof ConfigSnapshot) {
                 continue;
             }
             $values = array_merge($values, $layer->values());
-            $sources = array_merge($sources, $layer->sources());
+            $origins = array_merge($origins, $layer->origins());
             $loadedFiles = array_merge($loadedFiles, $layer->loadedFiles());
         }
-        return new ConfigSnapshot($values, $sources, $loadedFiles);
+        return new ConfigSnapshot($values, $origins, $loadedFiles);
     }
 
     private function filterSnapshot(
@@ -102,52 +102,54 @@ final class ConfigCompiler
     ): ConfigSnapshot {
         $phaseKeys = $this->manifest->resolvePhaseKeys($pipeline, $phase);
 
-        $allowed = array_flip(array_merge($phaseKeys, $this->manifest->variableKeys()));
+        $expectedKeys = array_flip(array_merge($phaseKeys, $this->manifest->variableKeys()));
         $values = [];
-        $sources = [];
+        $origins = [];
         foreach ($snapshot->values() as $key => $value) {
-            $source = $snapshot->sources()[$key] ?? '';
-            if ($this->shouldKeep($key, $source, $allowed)) {
+            $origin = $snapshot->origins()[$key] ?? '';
+            if ($this->shouldKeep($key, $origin, $expectedKeys)) {
                 $values[$key] = $value;
-                $sources[$key] = $source;
+                $origins[$key] = $origin;
             }
         }
 
-        return new ConfigSnapshot($values, $sources, $snapshot->loadedFiles());
+        return new ConfigSnapshot($values, $origins, $snapshot->loadedFiles());
     }
 
-    private function shouldKeep(string $key, string $source, array $allowed): bool
+    private function shouldKeep(string $key, string $origin, array $expectedKeys): bool
     {
-        if ($source !== 'system') {
+        if ($origin !== 'system') {
             return true;
         }
-        return isset($allowed[$key]);
+        return isset($expectedKeys[$key]);
     }
 
-    private function baseKeys(): array
-    {
-        return ['PIPELINE', 'PHASE'];
+    private function assertValidSnapshot(
+        string $pipeline,
+        string $phase,
+        ConfigSnapshot $snapshot
+    ): void {
+        $errors = $this->policy->validate($this->manifest, $pipeline, $phase, $snapshot);
+        if ($errors === []) {
+            return;
+        }
+
+        $message = "Config-Validierung fehlgeschlagen:\n- " . implode("\n- ", $errors);
+        throw new \RuntimeException($message);
     }
 
-    private function withoutKeys(ConfigSnapshot $snapshot, array $keys): ConfigSnapshot
-    {
-        $exclude = array_flip($keys);
-        $values = array_diff_key($snapshot->values(), $exclude);
-        $sources = array_diff_key($snapshot->sources(), $exclude);
-        return new ConfigSnapshot($values, $sources, $snapshot->loadedFiles());
-    }
-
-    private function filterAllowed(string $pipeline, string $phase, array $values): array
+    private function filterCompiledValues(string $pipeline, string $phase, array $values): array
     {
         $phaseKeys = $this->manifest->resolvePhaseKeys($pipeline, $phase);
-
-        $allowed = array_flip(array_merge($phaseKeys, $this->baseKeys()));
+        $expectedKeys = array_flip($phaseKeys);
         $filtered = [];
         foreach ($values as $key => $value) {
-            if (isset($allowed[$key])) {
+            if (isset($expectedKeys[$key])) {
                 $filtered[$key] = $value;
             }
         }
+        $filtered['PIPELINE'] = $pipeline;
+        $filtered['PHASE'] = $phase;
 
         return $filtered;
     }
