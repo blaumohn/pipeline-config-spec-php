@@ -69,8 +69,8 @@ pipelines:
 - **Validierung**: prüft Konfig-Variablen der gültigen Pipeline-Phase,
   Disjunktheit und `sources`
 - **Compiler**: erzeugt ein validiertes Config-Snapshot
-- **Kompilatausgabe**: schreibt Konfig-Variablen nach `config.php` und hält
-  die Pipeline-Phase getrennt als Metadaten
+- **Kompilatausgabe**: schreibt ein strukturiertes `config.php` mit
+  `pipeline_phase` und `values`
 
 CLI-Overrides werden wie normale Konfig-Variablen behandelt. Ein Override ist
 nur gültig, wenn der Schlüssel in der aktuellen Pipeline-Phase vorkommt und
@@ -85,9 +85,22 @@ $configService = new PipelineConfigService($rootPath);
 $configService->compile('dev', 'runtime');
 ```
 
-`compile()` schreibt nur Konfig-Variablen in das kompilierte Config-Array. Die
-Pipeline-Phase bleibt getrennt und ist über `describe()` sowie die benachbarten
-Kompilat-Metadaten verfügbar.
+`compile()` schreibt ein strukturiertes Kompilat:
+
+```php
+return [
+    'pipeline_phase' => [
+        'pipeline' => 'dev',
+        'phase' => 'runtime',
+    ],
+    'values' => [
+        'APP_URL' => 'https://example.test',
+    ],
+];
+```
+
+Die Pipeline-Phase bleibt damit im Kompilat klar von den Konfig-Variablen
+getrennt. `describe()` verwendet weiterhin den Report-Schlüssel `context`.
 
 Optional: eigenes Config-Verzeichnis (Default ist `config/`):
 

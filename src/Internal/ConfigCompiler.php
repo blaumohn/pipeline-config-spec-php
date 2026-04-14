@@ -35,8 +35,8 @@ final class ConfigCompiler
         $snapshot = $this->resolve($pipeline, $phase, $overrides);
         $targetPath = $this->resolveTargetPath($targetPath);
         $values = $this->filterCompiledValues($pipeline, $phase, $snapshot->values());
-        $this->writeCompiled($targetPath, $values);
-        $this->writeContext($this->resolveContextPath($targetPath), $pipeline, $phase);
+        $payload = $this->compiledPayload($pipeline, $phase, $values);
+        $this->writeCompiled($targetPath, $payload);
 
         return $targetPath;
     }
@@ -151,12 +151,15 @@ final class ConfigCompiler
         return $filtered;
     }
 
-    private function resolveContextPath(string $compiledPath): string
+    private function compiledPayload(string $pipeline, string $phase, array $values): array
     {
-        if (str_ends_with($compiledPath, '.php')) {
-            return substr($compiledPath, 0, -4) . '.context.php';
-        }
-        return $compiledPath . '.context.php';
+        return [
+            'pipeline_phase' => [
+                'pipeline' => $pipeline,
+                'phase' => $phase,
+            ],
+            'values' => $values,
+        ];
     }
 
     private function resolveTargetPath(?string $targetPath): string
@@ -167,22 +170,8 @@ final class ConfigCompiler
         return Path::join($this->rootPath, 'var', 'config', 'config.php');
     }
 
-    private function writeCompiled(string $path, array $values): void
+    private function writeCompiled(string $path, array $payload): void
     {
-        $dir = dirname($path);
-        if (!is_dir($dir)) {
-            mkdir($dir, 0775, true);
-        }
-        $payload = "<?php\n\nreturn " . var_export($values, true) . ";\n";
-        file_put_contents($path, $payload);
-    }
-
-    private function writeContext(string $path, string $pipeline, string $phase): void
-    {
-        $payload = [
-            'pipeline' => $pipeline,
-            'phase' => $phase,
-        ];
         $dir = dirname($path);
         if (!is_dir($dir)) {
             mkdir($dir, 0775, true);

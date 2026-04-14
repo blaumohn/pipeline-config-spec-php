@@ -15,14 +15,15 @@ final class ConfigCompilerTest extends TestCase
         $root = $this->createRoot();
         $this->writeManifest($root, $this->manifestData());
         $this->seedYamlFiles($root);
-        $values = $this->compileValues($root);
-        $context = $this->readContext($root . '/out/config.context.php');
+        $compiled = $this->compilePayload($root);
+        $values = $compiled['values'] ?? [];
+        $pipelinePhase = $compiled['pipeline_phase'] ?? [];
 
         self::assertArrayNotHasKey('PIPELINE', $values);
         self::assertArrayNotHasKey('PHASE', $values);
         self::assertSame('https://example.test', $values['APP_URL'] ?? null);
-        self::assertSame('dev', $context['pipeline'] ?? null);
-        self::assertSame('runtime', $context['phase'] ?? null);
+        self::assertSame('dev', $pipelinePhase['pipeline'] ?? null);
+        self::assertSame('runtime', $pipelinePhase['phase'] ?? null);
     }
 
     public function testCompileThrowsOnUnexpectedKey(): void
@@ -35,7 +36,7 @@ final class ConfigCompilerTest extends TestCase
         $this->seedYamlFiles($root);
         $this->writeYaml($root, 'config/common.yaml', "EXTRA: ignore\n");
 
-        $this->compileValues($root);
+        $this->compilePayload($root);
     }
 
     public function testCompileThrowsOnUnknownPipeline(): void
@@ -84,7 +85,8 @@ final class ConfigCompilerTest extends TestCase
         ]);
         putenv('IP_SALT=test-salt');
 
-        $values = $this->compileValues($root);
+        $compiled = $this->compilePayload($root);
+        $values = $compiled['values'] ?? [];
         putenv('IP_SALT');
 
         self::assertSame('test-salt', $values['IP_SALT'] ?? null);
@@ -98,12 +100,13 @@ final class ConfigCompilerTest extends TestCase
         $compiler = new ConfigCompiler($root);
         $targetPath = $root . '/out/config.php';
         $path = $compiler->compile('dev', 'setup', $targetPath);
-        $values = $this->readConfig($path);
-        $context = $this->readContext($root . '/out/config.context.php');
+        $compiled = $this->readConfig($path);
+        $values = $compiled['values'] ?? [];
+        $pipelinePhase = $compiled['pipeline_phase'] ?? [];
 
         self::assertSame([], $values);
-        self::assertSame('dev', $context['pipeline'] ?? null);
-        self::assertSame('setup', $context['phase'] ?? null);
+        self::assertSame('dev', $pipelinePhase['pipeline'] ?? null);
+        self::assertSame('setup', $pipelinePhase['phase'] ?? null);
     }
 
     public function testCompileRejectsValuesInEmptyPhase(): void
@@ -205,7 +208,7 @@ final class ConfigCompilerTest extends TestCase
         $this->writeYaml($root, 'config/dev-runtime.yaml', "APP_URL: https://example.test\n");
     }
 
-    private function compileValues(string $root): array
+    private function compilePayload(string $root): array
     {
         $compiler = new ConfigCompiler($root);
         $targetPath = $root . '/out/config.php';
@@ -219,9 +222,4 @@ final class ConfigCompilerTest extends TestCase
         return is_array($values) ? $values : [];
     }
 
-    private function readContext(string $path): array
-    {
-        $context = require $path;
-        return is_array($context) ? $context : [];
-    }
 }

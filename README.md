@@ -67,8 +67,8 @@ pipelines:
 - **Validation**: checks config variables of the valid pipeline phase,
   disjointness, and `sources`
 - **Compiler**: produces a validated config snapshot
-- **Compiled output**: writes config variables to `config.php` and stores the
-  pipeline phase separately as metadata
+- **Compiled output**: writes a structured `config.php` with
+  `pipeline_phase` and `values`
 
 CLI overrides are treated like regular config variables. An override is only
 valid when the key exists for the current pipeline phase and its `sources`
@@ -83,9 +83,22 @@ $configService = new PipelineConfigService($rootPath);
 $configService->compile('dev', 'runtime');
 ```
 
-`compile()` writes only config variables to the compiled config array. The
-pipeline phase stays separate and is available via `describe()` and the
-adjacent compiled context metadata.
+`compile()` writes a structured payload:
+
+```php
+return [
+    'pipeline_phase' => [
+        'pipeline' => 'dev',
+        'phase' => 'runtime',
+    ],
+    'values' => [
+        'APP_URL' => 'https://example.test',
+    ],
+];
+```
+
+This keeps the pipeline phase clearly separated from config variables inside
+one compiled file. `describe()` still uses the report key `context`.
 
 Optional: custom config dir (default is `config/`):
 
