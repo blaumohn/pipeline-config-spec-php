@@ -69,6 +69,8 @@ pipelines:
 - **Validierung**: prüft Konfig-Variablen der gültigen Pipeline-Phase,
   Disjunktheit und `sources`
 - **Compiler**: erzeugt ein validiertes Config-Snapshot
+- **Kompilatausgabe**: schreibt Konfig-Variablen nach `config.php` und hält
+  die Pipeline-Phase getrennt als Metadaten
 
 CLI-Overrides werden wie normale Konfig-Variablen behandelt. Ein Override ist
 nur gültig, wenn der Schlüssel in der aktuellen Pipeline-Phase vorkommt und
@@ -82,6 +84,10 @@ use PipelineConfigSpec\PipelineConfigService;
 $configService = new PipelineConfigService($rootPath);
 $configService->compile('dev', 'runtime');
 ```
+
+`compile()` schreibt nur Konfig-Variablen in das kompilierte Config-Array. Die
+Pipeline-Phase bleibt getrennt und ist über `describe()` sowie die benachbarten
+Kompilat-Metadaten verfügbar.
 
 Optional: eigenes Config-Verzeichnis (Default ist `config/`):
 

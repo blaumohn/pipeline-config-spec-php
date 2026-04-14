@@ -33,10 +33,10 @@ final class ConfigCompiler
         array $overrides = []
     ): string {
         $snapshot = $this->resolve($pipeline, $phase, $overrides);
-        $values = $this->filterCompiledValues($pipeline, $phase, $snapshot->values());
-
         $targetPath = $this->resolveTargetPath($targetPath);
+        $values = $this->filterCompiledValues($pipeline, $phase, $snapshot->values());
         $this->writeCompiled($targetPath, $values);
+        $this->writeContext($this->resolveContextPath($targetPath), $pipeline, $phase);
 
         return $targetPath;
     }
@@ -148,10 +148,15 @@ final class ConfigCompiler
                 $filtered[$key] = $value;
             }
         }
-        $filtered['PIPELINE'] = $pipeline;
-        $filtered['PHASE'] = $phase;
-
         return $filtered;
+    }
+
+    private function resolveContextPath(string $compiledPath): string
+    {
+        if (str_ends_with($compiledPath, '.php')) {
+            return substr($compiledPath, 0, -4) . '.context.php';
+        }
+        return $compiledPath . '.context.php';
     }
 
     private function resolveTargetPath(?string $targetPath): string
@@ -170,6 +175,20 @@ final class ConfigCompiler
         }
         $payload = "<?php\n\nreturn " . var_export($values, true) . ";\n";
         file_put_contents($path, $payload);
+    }
+
+    private function writeContext(string $path, string $pipeline, string $phase): void
+    {
+        $payload = [
+            'pipeline' => $pipeline,
+            'phase' => $phase,
+        ];
+        $dir = dirname($path);
+        if (!is_dir($dir)) {
+            mkdir($dir, 0775, true);
+        }
+        $content = "<?php\n\nreturn " . var_export($payload, true) . ";\n";
+        file_put_contents($path, $content);
     }
 
     private function normalizeConfigDir(string $configDir): string

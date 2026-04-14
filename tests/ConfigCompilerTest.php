@@ -16,10 +16,13 @@ final class ConfigCompilerTest extends TestCase
         $this->writeManifest($root, $this->manifestData());
         $this->seedYamlFiles($root);
         $values = $this->compileValues($root);
+        $context = $this->readContext($root . '/out/config.context.php');
 
-        self::assertSame('dev', $values['PIPELINE'] ?? null);
-        self::assertSame('runtime', $values['PHASE'] ?? null);
+        self::assertArrayNotHasKey('PIPELINE', $values);
+        self::assertArrayNotHasKey('PHASE', $values);
         self::assertSame('https://example.test', $values['APP_URL'] ?? null);
+        self::assertSame('dev', $context['pipeline'] ?? null);
+        self::assertSame('runtime', $context['phase'] ?? null);
     }
 
     public function testCompileThrowsOnUnexpectedKey(): void
@@ -96,10 +99,11 @@ final class ConfigCompilerTest extends TestCase
         $targetPath = $root . '/out/config.php';
         $path = $compiler->compile('dev', 'setup', $targetPath);
         $values = $this->readConfig($path);
+        $context = $this->readContext($root . '/out/config.context.php');
 
-        self::assertSame('dev', $values['PIPELINE'] ?? null);
-        self::assertSame('setup', $values['PHASE'] ?? null);
-        self::assertCount(2, $values);
+        self::assertSame([], $values);
+        self::assertSame('dev', $context['pipeline'] ?? null);
+        self::assertSame('setup', $context['phase'] ?? null);
     }
 
     public function testCompileRejectsValuesInEmptyPhase(): void
@@ -213,5 +217,11 @@ final class ConfigCompilerTest extends TestCase
     {
         $values = require $path;
         return is_array($values) ? $values : [];
+    }
+
+    private function readContext(string $path): array
+    {
+        $context = require $path;
+        return is_array($context) ? $context : [];
     }
 }
