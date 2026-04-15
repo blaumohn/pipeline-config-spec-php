@@ -10,28 +10,150 @@ use Symfony\Component\Yaml\Yaml;
 
 final class ManifestTest extends TestCase
 {
-    public function testExpandsGroups(): void
+    public function testExpandsSelectAllGroup(): void
     {
-        $root = $this->createRoot();
-        $this->writeManifest($root, $this->manifestData());
+        $manifest = $this->manifest($this->manifestData());
+        $keys = $manifest->resolvePhaseKeys('dev', 'build');
 
-        $manifest = new Manifest($root);
-        $phaseConfig = $manifest->resolvePhaseConfig('dev', 'build');
-        $allowed = $manifest->expandAllowed($phaseConfig['allowed'] ?? []);
-
-        self::assertContains('APP_URL', $allowed);
+        self::assertContains('APP_URL', $keys);
+        self::assertContains('APP_ENV', $keys);
     }
 
-    public function testRequiredFiltersWildcards(): void
+    public function testExpandsPartialGroup(): void
+    {
+        $manifest = $this->manifest([
+            'variable-groups' => [
+                'app' => [
+                    'APP_URL' => [],
+                    'APP_ENV' => [],
+                ],
+            ],
+            'phases' => [
+                'build' => [
+                    'app' => ['APP_URL'],
+                ],
+            ],
+            'pipelines' => [
+                'dev' => [],
+            ],
+        ]);
+
+        $keys = $manifest->resolvePhaseKeys('dev', 'build');
+
+        self::assertContains('APP_URL', $keys);
+        self::assertNotContains('APP_ENV', $keys);
+    }
+
+    public function testReturnsEmptyKeysForKnownEmptyPhase(): void
+    {
+        $manifest = $this->manifest($this->manifestData());
+
+        self::assertSame([], $manifest->resolvePhaseKeys('dev', 'setup'));
+    }
+
+    public function testReportsUnknownPhase(): void
+    {
+        $manifest = $this->manifest($this->manifestData());
+
+        self::assertSame(['Unbekannte Phase: setvp'], $manifest->pipelinePhaseErrors('dev', 'setvp'));
+    }
+
+    public function testReportsUnknownPipeline(): void
+    {
+        $manifest = $this->manifest($this->manifestData());
+
+        self::assertSame(['Unbekannte Pipeline: deev'], $manifest->pipelinePhaseErrors('deev', 'build'));
+    }
+
+    public function testDisjointPassesWhenNoOverlap(): void
+    {
+        $manifest = $this->manifest($this->manifestData());
+
+        self::assertSame([], $manifest->checkDisjoint('dev', 'build'));
+    }
+
+    public function testDisjointFailsOnOverlap(): void
+    {
+        $manifest = $this->manifest([
+            'variable-groups' => [
+                'app' => [
+                    'APP_URL' => [],
+                    'APP_ENV' => [],
+                ],
+            ],
+            'phases' => [
+                'build' => [
+                    'app' => ['APP_URL'],
+                ],
+            ],
+            'pipelines' => [
+                'dev' => [
+                    'build' => [
+                        'app' => ['APP_URL'],
+                    ],
+                ],
+            ],
+        ]);
+
+        $errors = $manifest->checkDisjoint('dev', 'build');
+
+        self::assertNotEmpty($errors);
+        self::assertStringContainsString('APP_URL', $errors[0]);
+    }
+
+    public function testUnknownGroupFails(): void
+    {
+        $this->expectException(\RuntimeException::class);
+        $this->expectExceptionMessage('Unbekannter group-key: missing');
+
+        $manifest = $this->manifest([
+            'variable-groups' => [
+                'app' => [
+                    'APP_URL' => [],
+                ],
+            ],
+            'phases' => [
+                'build' => [
+                    'missing' => '*',
+                ],
+            ],
+            'pipelines' => [
+                'dev' => [],
+            ],
+        ]);
+
+        $manifest->resolvePhaseKeys('dev', 'build');
+    }
+
+    public function testUnknownVariableFails(): void
+    {
+        $this->expectException(\RuntimeException::class);
+        $this->expectExceptionMessage('Unbekannter Variablen-key APP_ENV in group-key: app');
+
+        $manifest = $this->manifest([
+            'variable-groups' => [
+                'app' => [
+                    'APP_URL' => [],
+                ],
+            ],
+            'phases' => [
+                'build' => [
+                    'app' => ['APP_ENV'],
+                ],
+            ],
+            'pipelines' => [
+                'dev' => [],
+            ],
+        ]);
+
+        $manifest->resolvePhaseKeys('dev', 'build');
+    }
+
+    private function manifest(array $data): Manifest
     {
         $root = $this->createRoot();
-        $this->writeManifest($root, $this->manifestData());
-
-        $manifest = new Manifest($root);
-        $phaseConfig = $manifest->resolvePhaseConfig('dev', 'runtime');
-        $required = $manifest->expandRequired($phaseConfig['required'] ?? []);
-
-        self::assertNotContains('APP_*', $required);
+        $this->writeManifest($root, $data);
+        return new Manifest($root);
     }
 
     private function createRoot(): string
@@ -58,29 +180,20 @@ final class ManifestTest extends TestCase
     private function manifestData(): array
     {
         return [
-            'variables' => [
+            'variable-groups' => [
                 'app' => [
                     'APP_URL' => [],
                     'APP_ENV' => [],
                 ],
             ],
+            'phases' => [
+                'setup' => [],
+                'build' => [
+                    'app' => '*',
+                ],
+            ],
             'pipelines' => [
-                'common' => [
-                    'build' => [
-                        'required' => ['APP_URL'],
-                        'allowed' => ['app'],
-                    ],
-                    'runtime' => [
-                        'required' => ['APP_*'],
-                        'allowed' => ['app'],
-                    ],
-                ],
-                'dev' => [
-                    'build' => [
-                        'required' => [],
-                        'allowed' => [],
-                    ],
-                ],
+                'dev' => [],
             ],
         ];
     }

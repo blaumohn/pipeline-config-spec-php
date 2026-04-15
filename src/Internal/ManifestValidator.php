@@ -2,9 +2,6 @@
 
 namespace PipelineConfigSpec\Internal;
 
-use Symfony\Component\Config\Definition\Builder\TreeBuilder;
-use Symfony\Component\Config\Definition\Processor;
-
 /**
  * @internal
  */
@@ -12,50 +9,105 @@ final class ManifestValidator
 {
     public function validate(array $data): void
     {
-        $treeBuilder = new TreeBuilder('manifest');
-        $root = $treeBuilder->getRootNode();
+        $groups = $data['variable-groups'] ?? null;
+        $phases = $data['phases'] ?? null;
+        $pipelines = $data['pipelines'] ?? null;
+        if (!is_array($groups)) {
+            throw new \RuntimeException('Manifest-Feld variable-groups fehlt oder ist ungueltig.');
+        }
+        if (!is_array($phases)) {
+            throw new \RuntimeException('Manifest-Feld phases fehlt oder ist ungueltig.');
+        }
+        if (!is_array($pipelines)) {
+            throw new \RuntimeException('Manifest-Feld pipelines fehlt oder ist ungueltig.');
+        }
+        $this->validateGroups($groups);
+        $phaseKeys = $this->validatePhases($phases);
+        $this->validatePipelines($pipelines, $phaseKeys);
+    }
 
-        $root
-            ->children()
-                ->arrayNode('variables')
-                    ->useAttributeAsKey('group')
-                    ->arrayPrototype()
-                        ->useAttributeAsKey('name')
-                        ->arrayPrototype()
-                            ->children()
-                                ->arrayNode('sources')
-                                    ->scalarPrototype()->end()
-                                ->end()
-                                ->arrayNode('meta')
-                                    ->children()
-                                        ->scalarNode('desc')->end()
-                                        ->scalarNode('notes')->end()
-                                        ->scalarNode('example')->end()
-                                    ->end()
-                                ->end()
-                            ->end()
-                        ->end()
-                    ->end()
-                ->end()
-                ->arrayNode('pipelines')
-                    ->useAttributeAsKey('name')
-                    ->arrayPrototype()
-                        ->useAttributeAsKey('phase')
-                        ->arrayPrototype()
-                            ->children()
-                                ->arrayNode('required')
-                                    ->scalarPrototype()->end()
-                                ->end()
-                                ->arrayNode('allowed')
-                                    ->scalarPrototype()->end()
-                                ->end()
-                            ->end()
-                        ->end()
-                    ->end()
-                ->end()
-            ->end();
+    private function validateGroups(array $groups): void
+    {
+        foreach ($groups as $groupKey => $variables) {
+            $this->requireString($groupKey, 'variable-group.key fehlt.');
+            if (!is_array($variables)) {
+                throw new \RuntimeException('variable-group.variables fehlt oder ist ungueltig.');
+            }
+            foreach ($variables as $key => $definition) {
+                $this->requireString($key, 'Variablen-key fehlt.');
+                if (!is_array($definition)) {
+                    throw new \RuntimeException('Variablen-Definition muss ein Objekt sein.');
+                }
+            }
+        }
+    }
 
-        $processor = new Processor();
-        $processor->process($treeBuilder->buildTree(), ['manifest' => $data]);
+    private function validatePhases(array $phases): array
+    {
+        $phaseKeys = [];
+        foreach ($phases as $key => $phase) {
+            $key = $this->requireString($key, 'phases.<key> fehlt.');
+            if ($phase === null) {
+                $phase = [];
+            }
+            if (!is_array($phase)) {
+                throw new \RuntimeException('Jede Phase muss ein Objekt sein.');
+            }
+            $phaseKeys[$key] = true;
+            $this->validateGroupRules($phase);
+        }
+        return $phaseKeys;
+    }
+
+    private function validatePipelines(array $pipelines, array $phaseKeys): void
+    {
+        foreach ($pipelines as $pipeline => $phases) {
+            $pipeline = $this->requireString($pipeline, 'Pipeline-key fehlt.');
+            if ($pipeline === 'common') {
+                throw new \RuntimeException('common ist keine Pipeline im Manifest.');
+            }
+            if (!is_array($phases)) {
+                throw new \RuntimeException('Jede Pipeline muss ein Phasen-Mapping sein.');
+            }
+            foreach ($phases as $phase => $rules) {
+                $phase = $this->requireString($phase, 'Phasen-key fehlt.');
+                if (!isset($phaseKeys[$phase])) {
+                    throw new \RuntimeException("Unbekannte Phase im Pipeline-Mapping: {$phase}");
+                }
+                if (!is_array($rules)) {
+                    throw new \RuntimeException('Jede Pipeline-Phase muss ein Gruppen-Mapping sein.');
+                }
+                $this->validateGroupRules($rules);
+            }
+        }
+    }
+
+    private function validateGroupRules(array $rules): void
+    {
+        foreach ($rules as $groupKey => $selector) {
+            $this->requireString($groupKey, 'group-key fehlt.');
+            if ($selector === '*') {
+                continue;
+            }
+            if (!is_array($selector)) {
+                throw new \RuntimeException('Gruppen-Referenz braucht "*" oder eine Variablenliste.');
+            }
+            $this->validateVariableReferences($selector);
+        }
+    }
+
+    private function validateVariableReferences(array $variables): void
+    {
+        foreach ($variables as $key) {
+            $this->requireString($key, 'Variablen-Referenz fehlt.');
+        }
+    }
+
+    private function requireString(mixed $value, string $message): string
+    {
+        if (!is_string($value) || trim($value) === '') {
+            throw new \RuntimeException($message);
+        }
+        return trim($value);
     }
 }

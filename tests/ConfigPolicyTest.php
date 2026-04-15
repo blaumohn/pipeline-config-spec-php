@@ -14,83 +14,89 @@ final class ConfigPolicyTest extends TestCase
 {
     public function testValidConfigPasses(): void
     {
-        $root = $this->createRoot();
-        $this->writeManifest($root, $this->manifestData());
+        $errors = $this->validateSnapshot('dev', 'runtime', [
+            'APP_URL' => 'https://example.test',
+        ]);
 
-        $policy = new ConfigPolicy();
-        $manifest = new Manifest($root);
-        $snapshot = new ConfigSnapshot([
-            'PIPELINE' => 'dev',
-            'PHASE' => 'runtime',
-        ], [
-            'PIPELINE' => 'cli',
-            'PHASE' => 'cli',
-        ], []);
-
-        $errors = $policy->validate($manifest, 'dev', 'runtime', $snapshot);
         self::assertSame([], $errors);
     }
 
-    public function testDisallowedKeyFails(): void
+    public function testUnexpectedKeyFails(): void
     {
-        $root = $this->createRoot();
-        $this->writeManifest($root, $this->manifestData());
-
-        $policy = new ConfigPolicy();
-        $manifest = new Manifest($root);
-        $snapshot = new ConfigSnapshot([
-            'PIPELINE' => 'dev',
-            'PHASE' => 'runtime',
+        $errors = $this->validateSnapshot('dev', 'runtime', [
+            'APP_URL' => 'https://example.test',
             'EXTRA' => 'x',
-        ], [
-            'PIPELINE' => 'cli',
-            'PHASE' => 'cli',
-            'EXTRA' => 'cli',
-        ], []);
+        ]);
 
-        $errors = $policy->validate($manifest, 'dev', 'runtime', $snapshot);
         self::assertNotEmpty($errors);
+        self::assertContains('Unexpected key: EXTRA', $errors);
+    }
+
+    public function testUnknownPipelineFails(): void
+    {
+        $errors = $this->validateSnapshot('deev', 'runtime', []);
+
+        self::assertSame(['Unbekannte Pipeline: deev'], $errors);
+    }
+
+    public function testUnknownPhaseFails(): void
+    {
+        $errors = $this->validateSnapshot('dev', 'setvp', []);
+
+        self::assertSame(['Unbekannte Phase: setvp'], $errors);
     }
 
     public function testSourceMismatchFails(): void
     {
         $root = $this->createRoot();
         $this->writeManifest($root, [
-            'variables' => [
-                'context' => [
-                    'PIPELINE' => [],
-                    'PHASE' => [],
-                ],
+            'variable-groups' => [
                 'mail' => [
                     'SMTP_PASS' => [
                         'sources' => ['local'],
                     ],
                 ],
             ],
-            'pipelines' => [
-                'common' => [
-                    'runtime' => [
-                        'required' => ['PIPELINE', 'PHASE', 'SMTP_PASS'],
-                        'allowed' => ['context', 'mail'],
-                    ],
+            'phases' => [
+                'runtime' => [
+                    'mail' => ['SMTP_PASS'],
                 ],
+            ],
+            'pipelines' => [
+                'dev' => [],
             ],
         ]);
 
         $policy = new ConfigPolicy();
         $manifest = new Manifest($root);
         $snapshot = new ConfigSnapshot([
-            'PIPELINE' => 'dev',
-            'PHASE' => 'runtime',
             'SMTP_PASS' => 'secret',
         ], [
-            'PIPELINE' => 'cli',
-            'PHASE' => 'cli',
             'SMTP_PASS' => 'system',
         ], []);
 
         $errors = $policy->validate($manifest, 'dev', 'runtime', $snapshot);
         self::assertNotEmpty($errors);
+    }
+
+    public function testEmptyPhasePassesWhenSnapshotIsEmpty(): void
+    {
+        $errors = $this->validateSnapshot('dev', 'setup', []);
+
+        self::assertSame([], $errors);
+    }
+
+    private function validateSnapshot(string $pipeline, string $phase, array $values): array
+    {
+        $root = $this->createRoot();
+        $this->writeManifest($root, $this->manifestData());
+
+        $policy = new ConfigPolicy();
+        $manifest = new Manifest($root);
+        $origins = array_fill_keys(array_keys($values), 'file');
+        $snapshot = new ConfigSnapshot($values, $origins, []);
+
+        return $policy->validate($manifest, $pipeline, $phase, $snapshot);
     }
 
     private function createRoot(): string
@@ -117,19 +123,19 @@ final class ConfigPolicyTest extends TestCase
     private function manifestData(): array
     {
         return [
-            'variables' => [
-                'context' => [
-                    'PIPELINE' => [],
-                    'PHASE' => [],
+            'variable-groups' => [
+                'app' => [
+                    'APP_URL' => [],
+                ],
+            ],
+            'phases' => [
+                'setup' => [],
+                'runtime' => [
+                    'app' => '*',
                 ],
             ],
             'pipelines' => [
-                'common' => [
-                    'runtime' => [
-                        'required' => ['PIPELINE', 'PHASE'],
-                        'allowed' => ['context'],
-                    ],
-                ],
+                'dev' => [],
             ],
         ];
     }

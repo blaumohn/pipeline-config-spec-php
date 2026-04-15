@@ -1,12 +1,15 @@
 # Config Pipeline Spec (PHP)
 
-Dieses Repository enthaelt eine PHP-Implementierung einer Pipeline/Phase-basierten Config-Spec.
-Es umfasst YAML-Laden, Manifest-Validierung und Policy-Pruefungen.
+Dieses Repository enthält eine PHP-Implementierung einer Pipeline/Phase-basierten Config-Spec.
+Es umfasst YAML-Laden, Manifest-Validierung und Quellen-Prüfungen.
 
 ## Begriffe
 
 - **Pipeline**: Projektfluss (z. B. `dev`, `smoketest`, `delivery`)
 - **Phase**: Lebenszyklus-Schritt (z. B. `setup`, `build`, `runtime`, `deploy`)
+- **Pipeline-Phase**: das Paar aus `pipeline` und `phase`, z. B. `dev/runtime`
+- **Konfig-Variable**: fachlicher Schlüssel innerhalb einer Pipeline-Phase,
+  z. B. `APP_URL`
 
 ## Config-Reihenfolge
 
@@ -21,36 +24,57 @@ Es umfasst YAML-Laden, Manifest-Validierung und Policy-Pruefungen.
 `config/config.manifest.yaml`:
 
 ```yaml
-variables:
+variable-groups:
   app:
-    APP_URL: {}
-    APP_ENV: {}
-  secrets:
-    IP_SALT:
+    APP_URL:
+      meta:
+        desc: "Basis-URL der Anwendung"
+        example: "https://example.invalid"
+  mail:
+    SMTP_PASS:
       sources: [system, local]
 
+phases:
+  setup: {}
+
+  runtime:
+    app:
+      - APP_URL
+    mail: "*"
+
 pipelines:
-  common:
-    runtime:
-      required: [PIPELINE, PHASE, APP_ENV, IP_SALT]
-      allowed: [app, secrets]
-  dev:
-    runtime:
-      required: []
-      allowed: []
+  dev: {}
 ```
 
-- `variables` gruppiert Keys und optionale `sources`-Regeln.
-- `pipelines` definiert `allowed`/`required` pro Phase.
-- `allowed` akzeptiert Gruppennamen oder einzelne Keys (Wildcards erlaubt).
+- `variable-groups` definiert Gruppen, Keys, `meta` und optionale
+  `sources`-Regeln.
+- `phases` definiert gültige Phasennamen und gemeinsame Gruppenreferenzen.
+- `pipelines` definiert gültige Pipeline-Namen und pipelinespezifische
+  Ergänzungen.
+- Eine Gruppenreferenz nutzt `gruppe: "*"` für die ganze Gruppe oder
+  `gruppe: [KEY, ...]` für eine explizite Teilmenge.
+- Eine bekannte leere Phase wie `setup` ist ohne Variablen gültig.
+- `meta.notes` kann fachliche Abhängigkeiten zwischen Variablen dokumentieren.
+- `PIPELINE` und `PHASE` werden nur lib-intern aus der Pipeline-Phase
+  abgeleitet und stehen nicht im App-Manifest.
 
-## API (sprachunabhaengig)
+## API (sprachunabhängig)
 
 - **Inputs**: `pipeline`, `phase`
-- **YAML-Loader**: laedt kontextbezogene Config-Dateien
-- **Manifest**: expandiert Gruppen/Wildcards
-- **Policy**: prueft allowed/required und sources
+- **Pipeline-Phase-Validierung**: `pipeline` muss in `pipelines`, `phase`
+  muss in `phases` stehen
+- **YAML-Loader**: lädt kontextbezogene Config-Dateien
+- **Manifest**: expandiert Gruppen-Referenzen für eine gültige
+  Pipeline-Phase
+- **Validierung**: prüft Konfig-Variablen der gültigen Pipeline-Phase,
+  Disjunktheit und `sources`
 - **Compiler**: erzeugt ein validiertes Config-Snapshot
+- **Kompilatausgabe**: schreibt ein strukturiertes `config.php` mit
+  `pipeline_phase` und `values`
+
+CLI-Overrides werden wie normale Konfig-Variablen behandelt. Ein Override ist
+nur gültig, wenn der Schlüssel in der aktuellen Pipeline-Phase vorkommt und
+seine `sources` CLI-Quellen erlauben.
 
 ## PHP-Beispiel
 
@@ -60,6 +84,23 @@ use PipelineConfigSpec\PipelineConfigService;
 $configService = new PipelineConfigService($rootPath);
 $configService->compile('dev', 'runtime');
 ```
+
+`compile()` schreibt ein strukturiertes Kompilat:
+
+```php
+return [
+    'pipeline_phase' => [
+        'pipeline' => 'dev',
+        'phase' => 'runtime',
+    ],
+    'values' => [
+        'APP_URL' => 'https://example.test',
+    ],
+];
+```
+
+Die Pipeline-Phase bleibt damit im Kompilat klar von den Konfig-Variablen
+getrennt. `describe()` verwendet weiterhin den Report-Schlüssel `context`.
 
 Optional: eigenes Config-Verzeichnis (Default ist `config/`):
 

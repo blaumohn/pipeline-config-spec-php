@@ -13,42 +13,25 @@ final class ConfigPolicy
         string $phase,
         ConfigSnapshot $snapshot
     ): array {
-        $errors = [];
-        $phaseConfig = $manifest->resolvePhaseConfig($pipeline, $phase);
-        if ($phaseConfig === null) {
-            $errors[] = "Unbekannte Pipeline/Phase: {$pipeline}/{$phase}";
-            return $errors;
+        $pipelinePhaseErrors = $manifest->pipelinePhaseErrors($pipeline, $phase);
+        if ($pipelinePhaseErrors !== []) {
+            return $pipelinePhaseErrors;
         }
 
-        $required = $manifest->expandRequired($phaseConfig['required'] ?? []);
-        $allowed = $manifest->expandAllowed($phaseConfig['allowed'] ?? []);
+        $keys = $manifest->resolvePhaseKeys($pipeline, $phase);
 
-        $errors = array_merge(
-            $errors,
-            $this->validateAllowedRequired($required, $allowed),
-            $this->validateRequiredPresence($required, $snapshot),
-            $this->validateUnexpected($allowed, $snapshot),
+        return array_merge(
+            $manifest->checkDisjoint($pipeline, $phase),
+            $this->validateRequiredPresence($keys, $snapshot),
+            $this->validateUnexpected($keys, $snapshot),
             $this->validateSources($manifest, $snapshot)
         );
-
-        return $errors;
     }
 
-    private function validateAllowedRequired(array $required, array $allowed): array
+    private function validateRequiredPresence(array $keys, ConfigSnapshot $snapshot): array
     {
         $errors = [];
-        foreach ($required as $key) {
-            if (!$this->isAllowed($key, $allowed)) {
-                $errors[] = "Required key not allowed: {$key}";
-            }
-        }
-        return $errors;
-    }
-
-    private function validateRequiredPresence(array $required, ConfigSnapshot $snapshot): array
-    {
-        $errors = [];
-        foreach ($required as $key) {
+        foreach ($keys as $key) {
             if (!array_key_exists($key, $snapshot->values())) {
                 $errors[] = "Missing required key: {$key}";
             }
@@ -56,11 +39,12 @@ final class ConfigPolicy
         return $errors;
     }
 
-    private function validateUnexpected(array $allowed, ConfigSnapshot $snapshot): array
+    private function validateUnexpected(array $keys, ConfigSnapshot $snapshot): array
     {
+        $expectedKeys = array_flip($keys);
         $errors = [];
         foreach ($snapshot->values() as $key => $_value) {
-            if (!$this->isAllowed($key, $allowed)) {
+            if (!isset($expectedKeys[$key])) {
                 $errors[] = "Unexpected key: {$key}";
             }
         }
@@ -71,26 +55,22 @@ final class ConfigPolicy
     {
         $errors = [];
         $sources = $snapshot->sources();
-        foreach ($snapshot->values() as $key => $_value) {
-            $policy = $manifest->sourcesForKey($key);
-            if ($policy === []) {
+        foreach ($snapshot->values() as $variable => $_value) {
+            $sourcePolicy = $manifest->sourcePolicyForVariable($variable);
+            if ($sourcePolicy === []) {
                 continue;
             }
-            if (!array_key_exists($key, $snapshot->values())) {
+            $sourceType = $this->sourceType($sources[$variable] ?? '');
+            if (in_array($sourceType, $sourcePolicy, true)) {
                 continue;
             }
-            $source = $this->normalizeSource($sources[$key] ?? '');
-            if (in_array($source, $policy, true)) {
-                continue;
-            }
-            $policyLabel = implode(', ', $policy);
-            $errors[] = "Variable in falscher Quelle: {$key} ({$source}, erlaubt: {$policyLabel})";
+            $policyLabel = implode(', ', $sourcePolicy);
+            $errors[] = "Variable in falscher Quelle: {$variable} ({$sources}, erlaubt: {$policyLabel})";
         }
-
         return $errors;
     }
 
-    private function normalizeSource(string $source): string
+    private function sourceType(string $source): string
     {
         if ($source === 'system' || $source === 'cli') {
             return $source;
@@ -111,24 +91,5 @@ final class ConfigPolicy
         }
         return str_contains($source, '/.local/')
             || str_contains($source, '\\.local\\');
-    }
-
-    private function isAllowed(string $key, array $allowed): bool
-    {
-        foreach ($allowed as $rule) {
-            if (!is_string($rule) || $rule === '') {
-                continue;
-            }
-            if ($rule === $key) {
-                return true;
-            }
-            if (str_ends_with($rule, '*')) {
-                $prefix = substr($rule, 0, -1);
-                if (str_starts_with($key, $prefix)) {
-                    return true;
-                }
-            }
-        }
-        return false;
     }
 }
