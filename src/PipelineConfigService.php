@@ -57,7 +57,7 @@ final class PipelineConfigService
             'context' => $contextData,
             'files' => $snapshot->loadedFiles(),
             'values' => $snapshot->values(),
-            'origins' => $snapshot->origins(),
+            'sources' => $snapshot->sources(),
         ];
         return $data;
     }

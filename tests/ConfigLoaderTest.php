@@ -32,7 +32,7 @@ final class ConfigLoaderTest extends TestCase
         putenv('IP_SALT');
 
         self::assertSame('test-salt', $snapshot->values()['IP_SALT'] ?? null);
-        self::assertSame('system', $snapshot->origins()['IP_SALT'] ?? null);
+        self::assertSame('system', $snapshot->sources()['IP_SALT'] ?? null);
     }
 
     private function createRoot(): string

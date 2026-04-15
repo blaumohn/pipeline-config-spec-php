@@ -72,7 +72,7 @@ pipelines:
 
 CLI overrides are treated like regular config variables. An override is only
 valid when the key exists for the current pipeline phase and its `sources`
-allow the CLI origin.
+allow CLI sources.
 
 ## PHP usage
 

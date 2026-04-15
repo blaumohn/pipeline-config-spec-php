@@ -8,13 +8,13 @@ namespace PipelineConfigSpec\Internal;
 final class ConfigSnapshot
 {
     private array $values;
-    private array $origins;
+    private array $sources;
     private array $loadedFiles;
 
-    public function __construct(array $values, array $origins, array $loadedFiles)
+    public function __construct(array $values, array $sources, array $loadedFiles)
     {
         $this->values = $values;
-        $this->origins = $origins;
+        $this->sources = $sources;
         $this->loadedFiles = $loadedFiles;
     }
 
@@ -23,9 +23,9 @@ final class ConfigSnapshot
         return $this->values;
     }
 
-    public function origins(): array
+    public function sources(): array
     {
-        return $this->origins;
+        return $this->sources;
     }
 
     public function loadedFiles(): array

@@ -22,7 +22,7 @@ final class ConfigLoader
     public function load(string $pipeline, string $phase): ConfigSnapshot
     {
         $values = [];
-        $origins = [];
+        $sources = [];
         $loadedFiles = [];
 
         foreach ($this->configFiles($pipeline, $phase) as $file) {
@@ -36,18 +36,18 @@ final class ConfigLoader
                     continue;
                 }
                 $values[$key] = $value;
-                $origins[$key] = $file;
+                $sources[$key] = $file;
             }
             $loadedFiles[] = $file;
         }
 
-        return new ConfigSnapshot($values, $origins, $loadedFiles);
+        return new ConfigSnapshot($values, $sources, $loadedFiles);
     }
 
     public function loadSystem(array $keys): ConfigSnapshot
     {
         $values = [];
-        $origins = [];
+        $sources= [];
         foreach ($keys as $key) {
             if (!is_string($key) || $key === '') {
                 continue;
@@ -57,23 +57,23 @@ final class ConfigLoader
                 continue;
             }
             $values[$key] = $value;
-            $origins[$key] = 'system';
+            $sources[$key] = 'system';
         }
-        return new ConfigSnapshot($values, $origins, []);
+        return new ConfigSnapshot($values, $sources, []);
     }
 
     public function loadOverrides(array $overrides): ConfigSnapshot
     {
         $values = [];
-        $origins = [];
+        $sources = [];
         foreach ($overrides as $key => $value) {
             if (!is_string($key)) {
                 continue;
             }
             $values[$key] = $value;
-            $origins[$key] = 'cli';
+            $sources[$key] = 'cli';
         }
-        return new ConfigSnapshot($values, $origins, []);
+        return new ConfigSnapshot($values, $sources, []);
     }
 
     private function configFiles(string $pipeline, string $phase): array

@@ -12,7 +12,7 @@ final class Manifest
 {
     private array $data;
     private ?array $groupKeys = null;
-    private ?array $variableSources = null;
+    private ?array $variableSourcePolicy = null;
     private ?array $phaseRules = null;
 
     public function __construct(string $rootPath, string $configDir = 'config')
@@ -72,10 +72,10 @@ final class Manifest
         return $errors;
     }
 
-    public function sourcesForKey(string $key): array
+    public function sourcePolicyForVariable(string $variable): array
     {
-        $sources = $this->variableSources();
-        $value = $sources[$key] ?? [];
+        $sources = $this->variableSourcePolicy();
+        $value = $sources[$variable] ?? [];
         return is_array($value) ? $value : [];
     }
 
@@ -207,10 +207,10 @@ final class Manifest
         return array_values(array_unique($keys));
     }
 
-    private function variableSources(): array
+    private function variableSourcePolicy(): array
     {
-        if ($this->variableSources !== null) {
-            return $this->variableSources;
+        if ($this->variableSourcePolicy !== null) {
+            return $this->variableSourcePolicy;
         }
 
         $sources = [];
@@ -230,7 +230,7 @@ final class Manifest
             }
         }
 
-        $this->variableSources = $sources;
+        $this->variableSourcePolicy = $sources;
         return $sources;
     }
 

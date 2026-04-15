@@ -54,23 +54,23 @@ final class ConfigPolicy
     private function validateSources(Manifest $manifest, ConfigSnapshot $snapshot): array
     {
         $errors = [];
-        $origins = $snapshot->origins();
-        foreach ($snapshot->values() as $key => $_value) {
-            $allowedSources = $manifest->sourcesForKey($key);
-            if ($allowedSources === []) {
+        $sources= $snapshot->sources();
+        foreach ($snapshot->values() as $variable => $_value) {
+            $sourcePolicy = $manifest->sourcePolicyForVariable($variable);
+            if ($sourcePolicy === []) {
                 continue;
             }
-            $origin = $this->normalizeSource($origins[$key] ?? '');
-            if (in_array($origin, $allowedSources, true)) {
+            $sourceType = $this->sourceType($sources[$variable] ?? '');
+            if (in_array($sourceType, $sourcePolicy, true)) {
                 continue;
             }
-            $policyLabel = implode(', ', $allowedSources);
-            $errors[] = "Variable in falscher Quelle: {$key} ({$origin}, erlaubt: {$policyLabel})";
+            $policyLabel = implode(', ', $sourcePolicy);
+            $errors[] = "Variable in falscher Quelle: {$variable} ({$sources}, erlaubt: {$policyLabel})";
         }
         return $errors;
     }
 
-    private function normalizeSource(string $source): string
+    private function sourceType(string $source): string
     {
         if ($source === 'system' || $source === 'cli') {
             return $source;

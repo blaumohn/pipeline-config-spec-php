@@ -82,17 +82,17 @@ final class ConfigCompiler
     private function mergeLayers(array $layers): ConfigSnapshot
     {
         $values = [];
-        $origins = [];
+        $sources= [];
         $loadedFiles = [];
         foreach ($layers as $layer) {
             if (!$layer instanceof ConfigSnapshot) {
                 continue;
             }
             $values = array_merge($values, $layer->values());
-            $origins = array_merge($origins, $layer->origins());
+            $sources = array_merge($sources, $layer->sources());
             $loadedFiles = array_merge($loadedFiles, $layer->loadedFiles());
         }
-        return new ConfigSnapshot($values, $origins, $loadedFiles);
+        return new ConfigSnapshot($values, $sources, $loadedFiles);
     }
 
     private function filterSnapshot(
@@ -104,21 +104,21 @@ final class ConfigCompiler
 
         $expectedKeys = array_flip(array_merge($phaseKeys, $this->manifest->variableKeys()));
         $values = [];
-        $origins = [];
+        $sources = [];
         foreach ($snapshot->values() as $key => $value) {
-            $origin = $snapshot->origins()[$key] ?? '';
-            if ($this->shouldKeep($key, $origin, $expectedKeys)) {
+            $source = $snapshot->sources()[$key] ?? '';
+            if ($this->shouldKeep($key, $source, $expectedKeys)) {
                 $values[$key] = $value;
-                $origins[$key] = $origin;
+                $sources[$key] = $source;
             }
         }
 
-        return new ConfigSnapshot($values, $origins, $snapshot->loadedFiles());
+        return new ConfigSnapshot($values, $sources, $snapshot->loadedFiles());
     }
 
-    private function shouldKeep(string $key, string $origin, array $expectedKeys): bool
+    private function shouldKeep(string $key, string $source, array $expectedKeys): bool
     {
-        if ($origin !== 'system') {
+        if ($source!== 'system') {
             return true;
         }
         return isset($expectedKeys[$key]);
