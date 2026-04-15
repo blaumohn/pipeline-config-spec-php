@@ -44,7 +44,6 @@ final class ConfigCompiler
     public function resolve(string $pipeline, string $phase, array $overrides = []): ConfigSnapshot
     {
         $snapshot = $this->buildSnapshot($pipeline, $phase, $overrides);
-        $snapshot = $this->filterSnapshot($pipeline, $phase, $snapshot);
         $this->assertValidSnapshot($pipeline, $phase, $snapshot);
         return $snapshot;
     }
@@ -82,7 +81,7 @@ final class ConfigCompiler
     private function mergeLayers(array $layers): ConfigSnapshot
     {
         $values = [];
-        $sources= [];
+        $sources = [];
         $loadedFiles = [];
         foreach ($layers as $layer) {
             if (!$layer instanceof ConfigSnapshot) {
@@ -93,35 +92,6 @@ final class ConfigCompiler
             $loadedFiles = array_merge($loadedFiles, $layer->loadedFiles());
         }
         return new ConfigSnapshot($values, $sources, $loadedFiles);
-    }
-
-    private function filterSnapshot(
-        string $pipeline,
-        string $phase,
-        ConfigSnapshot $snapshot
-    ): ConfigSnapshot {
-        $phaseKeys = $this->manifest->resolvePhaseKeys($pipeline, $phase);
-
-        $expectedKeys = array_flip(array_merge($phaseKeys, $this->manifest->variableKeys()));
-        $values = [];
-        $sources = [];
-        foreach ($snapshot->values() as $key => $value) {
-            $source = $snapshot->sources()[$key] ?? '';
-            if ($this->shouldKeep($key, $source, $expectedKeys)) {
-                $values[$key] = $value;
-                $sources[$key] = $source;
-            }
-        }
-
-        return new ConfigSnapshot($values, $sources, $snapshot->loadedFiles());
-    }
-
-    private function shouldKeep(string $key, string $source, array $expectedKeys): bool
-    {
-        if ($source!== 'system') {
-            return true;
-        }
-        return isset($expectedKeys[$key]);
     }
 
     private function assertValidSnapshot(

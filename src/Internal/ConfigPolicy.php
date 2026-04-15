@@ -54,7 +54,7 @@ final class ConfigPolicy
     private function validateSources(Manifest $manifest, ConfigSnapshot $snapshot): array
     {
         $errors = [];
-        $sources= $snapshot->sources();
+        $sources = $snapshot->sources();
         foreach ($snapshot->values() as $variable => $_value) {
             $sourcePolicy = $manifest->sourcePolicyForVariable($variable);
             if ($sourcePolicy === []) {

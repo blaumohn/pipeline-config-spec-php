@@ -47,7 +47,7 @@ final class ConfigLoader
     public function loadSystem(array $keys): ConfigSnapshot
     {
         $values = [];
-        $sources= [];
+        $sources = [];
         foreach ($keys as $key) {
             if (!is_string($key) || $key === '') {
                 continue;
