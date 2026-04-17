@@ -60,12 +60,13 @@ final class ConfigPolicy
             if ($sourcePolicy === []) {
                 continue;
             }
-            $sourceType = $this->sourceType($sources[$variable] ?? '');
+            $source = (string) ($sources[$variable] ?? '');
+            $sourceType = $this->sourceType($source);
             if (in_array($sourceType, $sourcePolicy, true)) {
                 continue;
             }
             $policyLabel = implode(', ', $sourcePolicy);
-            $errors[] = "Variable in falscher Quelle: {$variable} ({$sources}, erlaubt: {$policyLabel})";
+            $errors[] = "Variable in falscher Quelle: {$variable} ({$source}, erlaubt: {$policyLabel})";
         }
         return $errors;
     }
