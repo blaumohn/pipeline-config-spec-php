@@ -4,20 +4,20 @@
     "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
     "This file is @generated automatically"
   ],
-  "content-hash": "dc9004fe45e8b77b9225cb7c9c1751b6",
+  "content-hash": "3955a6a58ff331337d19cc259d87e19b",
   "packages": [
     {
       "name": "symfony/config",
-      "version": "v7.4.3",
+      "version": "v7.4.8",
       "source": {
         "type": "git",
         "url": "https://github.com/symfony/config.git",
-        "reference": "800ce889e358a53a9678b3212b0c8cecd8c6aace"
+        "reference": "2d19dde43fa2ff720b9a40763ace7226594f503b"
       },
       "dist": {
         "type": "zip",
-        "url": "https://api.github.com/repos/symfony/config/zipball/800ce889e358a53a9678b3212b0c8cecd8c6aace",
-        "reference": "800ce889e358a53a9678b3212b0c8cecd8c6aace",
+        "url": "https://api.github.com/repos/symfony/config/zipball/2d19dde43fa2ff720b9a40763ace7226594f503b",
+        "reference": "2d19dde43fa2ff720b9a40763ace7226594f503b",
         "shasum": ""
       },
       "require": {
@@ -39,12 +39,12 @@
       },
       "type": "library",
       "autoload": {
-        "exclude-from-classmap": [
-          "/Tests/"
-        ],
         "psr-4": {
           "Symfony\\Component\\Config\\": ""
-        }
+        },
+        "exclude-from-classmap": [
+          "/Tests/"
+        ]
       },
       "notification-url": "https://packagist.org/downloads/",
       "license": [
@@ -52,38 +52,38 @@
       ],
       "authors": [
         {
-          "email": "fabien@symfony.com",
-          "name": "Fabien Potencier"
+          "name": "Fabien Potencier",
+          "email": "fabien@symfony.com"
         },
         {
-          "homepage": "https://symfony.com/contributors",
-          "name": "Symfony Community"
+          "name": "Symfony Community",
+          "homepage": "https://symfony.com/contributors"
         }
       ],
       "description": "Helps you find, load, combine, autofill and validate configuration values of any kind",
       "homepage": "https://symfony.com",
       "support": {
-        "source": "https://github.com/symfony/config/tree/v7.4.3"
+        "source": "https://github.com/symfony/config/tree/v7.4.8"
       },
       "funding": [
         {
-          "type": "custom",
-          "url": "https://symfony.com/sponsor"
+          "url": "https://symfony.com/sponsor",
+          "type": "custom"
         },
         {
-          "type": "github",
-          "url": "https://github.com/fabpot"
+          "url": "https://github.com/fabpot",
+          "type": "github"
         },
         {
-          "type": "github",
-          "url": "https://github.com/nicolas-grekas"
+          "url": "https://github.com/nicolas-grekas",
+          "type": "github"
         },
         {
-          "type": "tidelift",
-          "url": "https://tidelift.com/funding/github/packagist/symfony/symfony"
+          "url": "https://tidelift.com/funding/github/packagist/symfony/symfony",
+          "type": "tidelift"
         }
       ],
-      "time": "2025-12-23T14:24:27+00:00"
+      "time": "2026-03-24T13:12:05+00:00"
     },
     {
       "name": "symfony/deprecation-contracts",
@@ -104,12 +104,12 @@
       },
       "type": "library",
       "extra": {
+        "thanks": {
+          "url": "https://github.com/symfony/contracts",
+          "name": "symfony/contracts"
+        },
         "branch-alias": {
           "dev-main": "3.6-dev"
-        },
-        "thanks": {
-          "name": "symfony/contracts",
-          "url": "https://github.com/symfony/contracts"
         }
       },
       "autoload": {
@@ -123,12 +123,12 @@
       ],
       "authors": [
         {
-          "email": "p@tchwork.com",
-          "name": "Nicolas Grekas"
+          "name": "Nicolas Grekas",
+          "email": "p@tchwork.com"
         },
         {
-          "homepage": "https://symfony.com/contributors",
-          "name": "Symfony Community"
+          "name": "Symfony Community",
+          "homepage": "https://symfony.com/contributors"
         }
       ],
       "description": "A generic function and convention to trigger deprecation notices",
@@ -138,32 +138,32 @@
       },
       "funding": [
         {
-          "type": "custom",
-          "url": "https://symfony.com/sponsor"
+          "url": "https://symfony.com/sponsor",
+          "type": "custom"
         },
         {
-          "type": "github",
-          "url": "https://github.com/fabpot"
+          "url": "https://github.com/fabpot",
+          "type": "github"
         },
         {
-          "type": "tidelift",
-          "url": "https://tidelift.com/funding/github/packagist/symfony/symfony"
+          "url": "https://tidelift.com/funding/github/packagist/symfony/symfony",
+          "type": "tidelift"
         }
       ],
       "time": "2024-09-25T14:21:43+00:00"
     },
     {
       "name": "symfony/filesystem",
-      "version": "v7.4.0",
+      "version": "v7.4.8",
       "source": {
         "type": "git",
         "url": "https://github.com/symfony/filesystem.git",
-        "reference": "d551b38811096d0be9c4691d406991b47c0c630a"
+        "reference": "58b9790d12f9670b7f53a1c1738febd3108970a5"
       },
       "dist": {
         "type": "zip",
-        "url": "https://api.github.com/repos/symfony/filesystem/zipball/d551b38811096d0be9c4691d406991b47c0c630a",
-        "reference": "d551b38811096d0be9c4691d406991b47c0c630a",
+        "url": "https://api.github.com/repos/symfony/filesystem/zipball/58b9790d12f9670b7f53a1c1738febd3108970a5",
+        "reference": "58b9790d12f9670b7f53a1c1738febd3108970a5",
         "shasum": ""
       },
       "require": {
@@ -176,12 +176,12 @@
       },
       "type": "library",
       "autoload": {
-        "exclude-from-classmap": [
-          "/Tests/"
-        ],
         "psr-4": {
           "Symfony\\Component\\Filesystem\\": ""
-        }
+        },
+        "exclude-from-classmap": [
+          "/Tests/"
+        ]
       },
       "notification-url": "https://packagist.org/downloads/",
       "license": [
@@ -189,51 +189,51 @@
       ],
       "authors": [
         {
-          "email": "fabien@symfony.com",
-          "name": "Fabien Potencier"
+          "name": "Fabien Potencier",
+          "email": "fabien@symfony.com"
         },
         {
-          "homepage": "https://symfony.com/contributors",
-          "name": "Symfony Community"
+          "name": "Symfony Community",
+          "homepage": "https://symfony.com/contributors"
         }
       ],
       "description": "Provides basic utilities for the filesystem",
       "homepage": "https://symfony.com",
       "support": {
-        "source": "https://github.com/symfony/filesystem/tree/v7.4.0"
+        "source": "https://github.com/symfony/filesystem/tree/v7.4.8"
       },
       "funding": [
         {
-          "type": "custom",
-          "url": "https://symfony.com/sponsor"
+          "url": "https://symfony.com/sponsor",
+          "type": "custom"
         },
         {
-          "type": "github",
-          "url": "https://github.com/fabpot"
+          "url": "https://github.com/fabpot",
+          "type": "github"
         },
         {
-          "type": "github",
-          "url": "https://github.com/nicolas-grekas"
+          "url": "https://github.com/nicolas-grekas",
+          "type": "github"
         },
         {
-          "type": "tidelift",
-          "url": "https://tidelift.com/funding/github/packagist/symfony/symfony"
+          "url": "https://tidelift.com/funding/github/packagist/symfony/symfony",
+          "type": "tidelift"
         }
       ],
-      "time": "2025-11-27T13:27:24+00:00"
+      "time": "2026-03-24T13:12:05+00:00"
     },
     {
       "name": "symfony/polyfill-ctype",
-      "version": "v1.33.0",
+      "version": "v1.36.0",
       "source": {
         "type": "git",
         "url": "https://github.com/symfony/polyfill-ctype.git",
-        "reference": "a3cc8b044a6ea513310cbd48ef7333b384945638"
+        "reference": "141046a8f9477948ff284fa65be2095baafb94f2"
       },
       "dist": {
         "type": "zip",
-        "url": "https://api.github.com/repos/symfony/polyfill-ctype/zipball/a3cc8b044a6ea513310cbd48ef7333b384945638",
-        "reference": "a3cc8b044a6ea513310cbd48ef7333b384945638",
+        "url": "https://api.github.com/repos/symfony/polyfill-ctype/zipball/141046a8f9477948ff284fa65be2095baafb94f2",
+        "reference": "141046a8f9477948ff284fa65be2095baafb94f2",
         "shasum": ""
       },
       "require": {
@@ -248,8 +248,8 @@
       "type": "library",
       "extra": {
         "thanks": {
-          "name": "symfony/polyfill",
-          "url": "https://github.com/symfony/polyfill"
+          "url": "https://github.com/symfony/polyfill",
+          "name": "symfony/polyfill"
         }
       },
       "autoload": {
@@ -266,12 +266,12 @@
       ],
       "authors": [
         {
-          "email": "BackEndTea@gmail.com",
-          "name": "Gert de Pagter"
+          "name": "Gert de Pagter",
+          "email": "BackEndTea@gmail.com"
         },
         {
-          "homepage": "https://symfony.com/contributors",
-          "name": "Symfony Community"
+          "name": "Symfony Community",
+          "homepage": "https://symfony.com/contributors"
         }
       ],
       "description": "Symfony polyfill for ctype functions",
@@ -283,40 +283,40 @@
         "portable"
       ],
       "support": {
-        "source": "https://github.com/symfony/polyfill-ctype/tree/v1.33.0"
+        "source": "https://github.com/symfony/polyfill-ctype/tree/v1.36.0"
       },
       "funding": [
         {
-          "type": "custom",
-          "url": "https://symfony.com/sponsor"
+          "url": "https://symfony.com/sponsor",
+          "type": "custom"
         },
         {
-          "type": "github",
-          "url": "https://github.com/fabpot"
+          "url": "https://github.com/fabpot",
+          "type": "github"
         },
         {
-          "type": "github",
-          "url": "https://github.com/nicolas-grekas"
+          "url": "https://github.com/nicolas-grekas",
+          "type": "github"
         },
         {
-          "type": "tidelift",
-          "url": "https://tidelift.com/funding/github/packagist/symfony/symfony"
+          "url": "https://tidelift.com/funding/github/packagist/symfony/symfony",
+          "type": "tidelift"
         }
       ],
-      "time": "2024-09-09T11:45:10+00:00"
+      "time": "2026-04-10T16:19:22+00:00"
     },
     {
       "name": "symfony/polyfill-mbstring",
-      "version": "v1.33.0",
+      "version": "v1.36.0",
       "source": {
         "type": "git",
         "url": "https://github.com/symfony/polyfill-mbstring.git",
-        "reference": "6d857f4d76bd4b343eac26d6b539585d2bc56493"
+        "reference": "6a21eb99c6973357967f6ce3708cd55a6bec6315"
       },
       "dist": {
         "type": "zip",
-        "url": "https://api.github.com/repos/symfony/polyfill-mbstring/zipball/6d857f4d76bd4b343eac26d6b539585d2bc56493",
-        "reference": "6d857f4d76bd4b343eac26d6b539585d2bc56493",
+        "url": "https://api.github.com/repos/symfony/polyfill-mbstring/zipball/6a21eb99c6973357967f6ce3708cd55a6bec6315",
+        "reference": "6a21eb99c6973357967f6ce3708cd55a6bec6315",
         "shasum": ""
       },
       "require": {
@@ -332,8 +332,8 @@
       "type": "library",
       "extra": {
         "thanks": {
-          "name": "symfony/polyfill",
-          "url": "https://github.com/symfony/polyfill"
+          "url": "https://github.com/symfony/polyfill",
+          "name": "symfony/polyfill"
         }
       },
       "autoload": {
@@ -350,12 +350,12 @@
       ],
       "authors": [
         {
-          "email": "p@tchwork.com",
-          "name": "Nicolas Grekas"
+          "name": "Nicolas Grekas",
+          "email": "p@tchwork.com"
         },
         {
-          "homepage": "https://symfony.com/contributors",
-          "name": "Symfony Community"
+          "name": "Symfony Community",
+          "homepage": "https://symfony.com/contributors"
         }
       ],
       "description": "Symfony polyfill for the Mbstring extension",
@@ -368,40 +368,40 @@
         "shim"
       ],
       "support": {
-        "source": "https://github.com/symfony/polyfill-mbstring/tree/v1.33.0"
+        "source": "https://github.com/symfony/polyfill-mbstring/tree/v1.36.0"
       },
       "funding": [
         {
-          "type": "custom",
-          "url": "https://symfony.com/sponsor"
+          "url": "https://symfony.com/sponsor",
+          "type": "custom"
         },
         {
-          "type": "github",
-          "url": "https://github.com/fabpot"
+          "url": "https://github.com/fabpot",
+          "type": "github"
         },
         {
-          "type": "github",
-          "url": "https://github.com/nicolas-grekas"
+          "url": "https://github.com/nicolas-grekas",
+          "type": "github"
         },
         {
-          "type": "tidelift",
-          "url": "https://tidelift.com/funding/github/packagist/symfony/symfony"
+          "url": "https://tidelift.com/funding/github/packagist/symfony/symfony",
+          "type": "tidelift"
         }
       ],
-      "time": "2024-12-23T08:48:59+00:00"
+      "time": "2026-04-10T17:25:58+00:00"
     },
     {
       "name": "symfony/yaml",
-      "version": "v7.4.1",
+      "version": "v7.4.8",
       "source": {
         "type": "git",
         "url": "https://github.com/symfony/yaml.git",
-        "reference": "24dd4de28d2e3988b311751ac49e684d783e2345"
+        "reference": "c58fdf7b3d6c2995368264c49e4e8b05bcff2883"
       },
       "dist": {
         "type": "zip",
-        "url": "https://api.github.com/repos/symfony/yaml/zipball/24dd4de28d2e3988b311751ac49e684d783e2345",
-        "reference": "24dd4de28d2e3988b311751ac49e684d783e2345",
+        "url": "https://api.github.com/repos/symfony/yaml/zipball/c58fdf7b3d6c2995368264c49e4e8b05bcff2883",
+        "reference": "c58fdf7b3d6c2995368264c49e4e8b05bcff2883",
         "shasum": ""
       },
       "require": {
@@ -420,12 +420,12 @@
       ],
       "type": "library",
       "autoload": {
-        "exclude-from-classmap": [
-          "/Tests/"
-        ],
         "psr-4": {
           "Symfony\\Component\\Yaml\\": ""
-        }
+        },
+        "exclude-from-classmap": [
+          "/Tests/"
+        ]
       },
       "notification-url": "https://packagist.org/downloads/",
       "license": [
@@ -433,38 +433,38 @@
       ],
       "authors": [
         {
-          "email": "fabien@symfony.com",
-          "name": "Fabien Potencier"
+          "name": "Fabien Potencier",
+          "email": "fabien@symfony.com"
         },
         {
-          "homepage": "https://symfony.com/contributors",
-          "name": "Symfony Community"
+          "name": "Symfony Community",
+          "homepage": "https://symfony.com/contributors"
         }
       ],
       "description": "Loads and dumps YAML files",
       "homepage": "https://symfony.com",
       "support": {
-        "source": "https://github.com/symfony/yaml/tree/v7.4.1"
+        "source": "https://github.com/symfony/yaml/tree/v7.4.8"
       },
       "funding": [
         {
-          "type": "custom",
-          "url": "https://symfony.com/sponsor"
+          "url": "https://symfony.com/sponsor",
+          "type": "custom"
         },
         {
-          "type": "github",
-          "url": "https://github.com/fabpot"
+          "url": "https://github.com/fabpot",
+          "type": "github"
         },
         {
-          "type": "github",
-          "url": "https://github.com/nicolas-grekas"
+          "url": "https://github.com/nicolas-grekas",
+          "type": "github"
         },
         {
-          "type": "tidelift",
-          "url": "https://tidelift.com/funding/github/packagist/symfony/symfony"
+          "url": "https://tidelift.com/funding/github/packagist/symfony/symfony",
+          "type": "tidelift"
         }
       ],
-      "time": "2025-12-04T18:11:45+00:00"
+      "time": "2026-03-24T13:12:05+00:00"
     }
   ],
   "packages-dev": [
@@ -522,8 +522,8 @@
       },
       "funding": [
         {
-          "type": "tidelift",
-          "url": "https://tidelift.com/funding/github/packagist/myclabs/deep-copy"
+          "url": "https://tidelift.com/funding/github/packagist/myclabs/deep-copy",
+          "type": "tidelift"
         }
       ],
       "time": "2025-08-01T08:46:24+00:00"
@@ -625,18 +625,18 @@
       ],
       "authors": [
         {
-          "email": "arne@blankerts.de",
           "name": "Arne Blankerts",
+          "email": "arne@blankerts.de",
           "role": "Developer"
         },
         {
-          "email": "sebastian@phpeople.de",
           "name": "Sebastian Heuer",
+          "email": "sebastian@phpeople.de",
           "role": "Developer"
         },
         {
-          "email": "sebastian@phpunit.de",
           "name": "Sebastian Bergmann",
+          "email": "sebastian@phpunit.de",
           "role": "Developer"
         }
       ],
@@ -647,8 +647,8 @@
       },
       "funding": [
         {
-          "type": "github",
-          "url": "https://github.com/theseer"
+          "url": "https://github.com/theseer",
+          "type": "github"
         }
       ],
       "time": "2024-03-03T12:33:53+00:00"
@@ -682,18 +682,18 @@
       ],
       "authors": [
         {
-          "email": "arne@blankerts.de",
           "name": "Arne Blankerts",
+          "email": "arne@blankerts.de",
           "role": "Developer"
         },
         {
-          "email": "sebastian@phpeople.de",
           "name": "Sebastian Heuer",
+          "email": "sebastian@phpeople.de",
           "role": "Developer"
         },
         {
-          "email": "sebastian@phpunit.de",
           "name": "Sebastian Bergmann",
+          "email": "sebastian@phpunit.de",
           "role": "Developer"
         }
       ],
@@ -757,8 +757,8 @@
       ],
       "authors": [
         {
-          "email": "sebastian@phpunit.de",
           "name": "Sebastian Bergmann",
+          "email": "sebastian@phpunit.de",
           "role": "lead"
         }
       ],
@@ -776,8 +776,8 @@
       },
       "funding": [
         {
-          "type": "github",
-          "url": "https://github.com/sebastianbergmann"
+          "url": "https://github.com/sebastianbergmann",
+          "type": "github"
         }
       ],
       "time": "2024-08-22T04:31:57+00:00"
@@ -819,8 +819,8 @@
       ],
       "authors": [
         {
-          "email": "sebastian@phpunit.de",
           "name": "Sebastian Bergmann",
+          "email": "sebastian@phpunit.de",
           "role": "lead"
         }
       ],
@@ -837,8 +837,8 @@
       },
       "funding": [
         {
-          "type": "github",
-          "url": "https://github.com/sebastianbergmann"
+          "url": "https://github.com/sebastianbergmann",
+          "type": "github"
         }
       ],
       "time": "2023-08-31T06:24:48+00:00"
@@ -884,8 +884,8 @@
       ],
       "authors": [
         {
-          "email": "sebastian@phpunit.de",
           "name": "Sebastian Bergmann",
+          "email": "sebastian@phpunit.de",
           "role": "lead"
         }
       ],
@@ -900,8 +900,8 @@
       },
       "funding": [
         {
-          "type": "github",
-          "url": "https://github.com/sebastianbergmann"
+          "url": "https://github.com/sebastianbergmann",
+          "type": "github"
         }
       ],
       "time": "2023-02-03T06:56:09+00:00"
@@ -943,8 +943,8 @@
       ],
       "authors": [
         {
-          "email": "sebastian@phpunit.de",
           "name": "Sebastian Bergmann",
+          "email": "sebastian@phpunit.de",
           "role": "lead"
         }
       ],
@@ -960,8 +960,8 @@
       },
       "funding": [
         {
-          "type": "github",
-          "url": "https://github.com/sebastianbergmann"
+          "url": "https://github.com/sebastianbergmann",
+          "type": "github"
         }
       ],
       "time": "2023-08-31T14:07:24+00:00"
@@ -1003,8 +1003,8 @@
       ],
       "authors": [
         {
-          "email": "sebastian@phpunit.de",
           "name": "Sebastian Bergmann",
+          "email": "sebastian@phpunit.de",
           "role": "lead"
         }
       ],
@@ -1019,24 +1019,24 @@
       },
       "funding": [
         {
-          "type": "github",
-          "url": "https://github.com/sebastianbergmann"
+          "url": "https://github.com/sebastianbergmann",
+          "type": "github"
         }
       ],
       "time": "2023-02-03T06:57:52+00:00"
     },
     {
       "name": "phpunit/phpunit",
-      "version": "10.5.60",
+      "version": "10.5.63",
       "source": {
         "type": "git",
         "url": "https://github.com/sebastianbergmann/phpunit.git",
-        "reference": "f2e26f52f80ef77832e359205f216eeac00e320c"
+        "reference": "33198268dad71e926626b618f3ec3966661e4d90"
       },
       "dist": {
         "type": "zip",
-        "url": "https://api.github.com/repos/sebastianbergmann/phpunit/zipball/f2e26f52f80ef77832e359205f216eeac00e320c",
-        "reference": "f2e26f52f80ef77832e359205f216eeac00e320c",
+        "url": "https://api.github.com/repos/sebastianbergmann/phpunit/zipball/33198268dad71e926626b618f3ec3966661e4d90",
+        "reference": "33198268dad71e926626b618f3ec3966661e4d90",
         "shasum": ""
       },
       "require": {
@@ -1057,7 +1057,7 @@
         "phpunit/php-timer": "^6.0.0",
         "sebastian/cli-parser": "^2.0.1",
         "sebastian/code-unit": "^2.0.0",
-        "sebastian/comparator": "^5.0.4",
+        "sebastian/comparator": "^5.0.5",
         "sebastian/diff": "^5.1.1",
         "sebastian/environment": "^6.1.0",
         "sebastian/exporter": "^5.1.4",
@@ -1080,11 +1080,11 @@
         }
       },
       "autoload": {
-        "classmap": [
-          "src/"
-        ],
         "files": [
           "src/Framework/Assert/Functions.php"
+        ],
+        "classmap": [
+          "src/"
         ]
       },
       "notification-url": "https://packagist.org/downloads/",
@@ -1093,8 +1093,8 @@
       ],
       "authors": [
         {
-          "email": "sebastian@phpunit.de",
           "name": "Sebastian Bergmann",
+          "email": "sebastian@phpunit.de",
           "role": "lead"
         }
       ],
@@ -1108,31 +1108,31 @@
       "support": {
         "issues": "https://github.com/sebastianbergmann/phpunit/issues",
         "security": "https://github.com/sebastianbergmann/phpunit/security/policy",
-        "source": "https://github.com/sebastianbergmann/phpunit/tree/10.5.60"
+        "source": "https://github.com/sebastianbergmann/phpunit/tree/10.5.63"
       },
       "funding": [
         {
-          "type": "custom",
-          "url": "https://phpunit.de/sponsors.html"
+          "url": "https://phpunit.de/sponsors.html",
+          "type": "custom"
         },
         {
-          "type": "github",
-          "url": "https://github.com/sebastianbergmann"
+          "url": "https://github.com/sebastianbergmann",
+          "type": "github"
         },
         {
-          "type": "liberapay",
-          "url": "https://liberapay.com/sebastianbergmann"
+          "url": "https://liberapay.com/sebastianbergmann",
+          "type": "liberapay"
         },
         {
-          "type": "thanks_dev",
-          "url": "https://thanks.dev/u/gh/sebastianbergmann"
+          "url": "https://thanks.dev/u/gh/sebastianbergmann",
+          "type": "thanks_dev"
         },
         {
-          "type": "tidelift",
-          "url": "https://tidelift.com/funding/github/packagist/phpunit/phpunit"
+          "url": "https://tidelift.com/funding/github/packagist/phpunit/phpunit",
+          "type": "tidelift"
         }
       ],
-      "time": "2025-12-06T07:50:42+00:00"
+      "time": "2026-01-27T05:48:37+00:00"
     },
     {
       "name": "sebastian/cli-parser",
@@ -1171,8 +1171,8 @@
       ],
       "authors": [
         {
-          "email": "sebastian@phpunit.de",
           "name": "Sebastian Bergmann",
+          "email": "sebastian@phpunit.de",
           "role": "lead"
         }
       ],
@@ -1185,8 +1185,8 @@
       },
       "funding": [
         {
-          "type": "github",
-          "url": "https://github.com/sebastianbergmann"
+          "url": "https://github.com/sebastianbergmann",
+          "type": "github"
         }
       ],
       "time": "2024-03-02T07:12:49+00:00"
@@ -1228,8 +1228,8 @@
       ],
       "authors": [
         {
-          "email": "sebastian@phpunit.de",
           "name": "Sebastian Bergmann",
+          "email": "sebastian@phpunit.de",
           "role": "lead"
         }
       ],
@@ -1241,8 +1241,8 @@
       },
       "funding": [
         {
-          "type": "github",
-          "url": "https://github.com/sebastianbergmann"
+          "url": "https://github.com/sebastianbergmann",
+          "type": "github"
         }
       ],
       "time": "2023-02-03T06:58:43+00:00"
@@ -1284,8 +1284,8 @@
       ],
       "authors": [
         {
-          "email": "sebastian@phpunit.de",
-          "name": "Sebastian Bergmann"
+          "name": "Sebastian Bergmann",
+          "email": "sebastian@phpunit.de"
         }
       ],
       "description": "Looks up which function or method a line of code belongs to",
@@ -1296,24 +1296,24 @@
       },
       "funding": [
         {
-          "type": "github",
-          "url": "https://github.com/sebastianbergmann"
+          "url": "https://github.com/sebastianbergmann",
+          "type": "github"
         }
       ],
       "time": "2023-02-03T06:59:15+00:00"
     },
     {
       "name": "sebastian/comparator",
-      "version": "5.0.4",
+      "version": "5.0.5",
       "source": {
         "type": "git",
         "url": "https://github.com/sebastianbergmann/comparator.git",
-        "reference": "e8e53097718d2b53cfb2aa859b06a41abf58c62e"
+        "reference": "55dfef806eb7dfeb6e7a6935601fef866f8ca48d"
       },
       "dist": {
         "type": "zip",
-        "url": "https://api.github.com/repos/sebastianbergmann/comparator/zipball/e8e53097718d2b53cfb2aa859b06a41abf58c62e",
-        "reference": "e8e53097718d2b53cfb2aa859b06a41abf58c62e",
+        "url": "https://api.github.com/repos/sebastianbergmann/comparator/zipball/55dfef806eb7dfeb6e7a6935601fef866f8ca48d",
+        "reference": "55dfef806eb7dfeb6e7a6935601fef866f8ca48d",
         "shasum": ""
       },
       "require": {
@@ -1343,20 +1343,20 @@
       ],
       "authors": [
         {
-          "email": "sebastian@phpunit.de",
-          "name": "Sebastian Bergmann"
+          "name": "Sebastian Bergmann",
+          "email": "sebastian@phpunit.de"
         },
         {
-          "email": "whatthejeff@gmail.com",
-          "name": "Jeff Welch"
+          "name": "Jeff Welch",
+          "email": "whatthejeff@gmail.com"
         },
         {
-          "email": "github@wallbash.com",
-          "name": "Volker Dusch"
+          "name": "Volker Dusch",
+          "email": "github@wallbash.com"
         },
         {
-          "email": "bschussek@2bepublished.at",
-          "name": "Bernhard Schussek"
+          "name": "Bernhard Schussek",
+          "email": "bschussek@2bepublished.at"
         }
       ],
       "description": "Provides the functionality to compare PHP values for equality",
@@ -1369,27 +1369,27 @@
       "support": {
         "issues": "https://github.com/sebastianbergmann/comparator/issues",
         "security": "https://github.com/sebastianbergmann/comparator/security/policy",
-        "source": "https://github.com/sebastianbergmann/comparator/tree/5.0.4"
+        "source": "https://github.com/sebastianbergmann/comparator/tree/5.0.5"
       },
       "funding": [
         {
-          "type": "github",
-          "url": "https://github.com/sebastianbergmann"
+          "url": "https://github.com/sebastianbergmann",
+          "type": "github"
         },
         {
-          "type": "liberapay",
-          "url": "https://liberapay.com/sebastianbergmann"
+          "url": "https://liberapay.com/sebastianbergmann",
+          "type": "liberapay"
         },
         {
-          "type": "thanks_dev",
-          "url": "https://thanks.dev/u/gh/sebastianbergmann"
+          "url": "https://thanks.dev/u/gh/sebastianbergmann",
+          "type": "thanks_dev"
         },
         {
-          "type": "tidelift",
-          "url": "https://tidelift.com/funding/github/packagist/sebastian/comparator"
+          "url": "https://tidelift.com/funding/github/packagist/sebastian/comparator",
+          "type": "tidelift"
         }
       ],
-      "time": "2025-09-07T05:25:07+00:00"
+      "time": "2026-01-24T09:25:16+00:00"
     },
     {
       "name": "sebastian/complexity",
@@ -1429,8 +1429,8 @@
       ],
       "authors": [
         {
-          "email": "sebastian@phpunit.de",
           "name": "Sebastian Bergmann",
+          "email": "sebastian@phpunit.de",
           "role": "lead"
         }
       ],
@@ -1443,8 +1443,8 @@
       },
       "funding": [
         {
-          "type": "github",
-          "url": "https://github.com/sebastianbergmann"
+          "url": "https://github.com/sebastianbergmann",
+          "type": "github"
         }
       ],
       "time": "2023-12-21T08:37:17+00:00"
@@ -1487,12 +1487,12 @@
       ],
       "authors": [
         {
-          "email": "sebastian@phpunit.de",
-          "name": "Sebastian Bergmann"
+          "name": "Sebastian Bergmann",
+          "email": "sebastian@phpunit.de"
         },
         {
-          "email": "mail@kore-nordmann.de",
-          "name": "Kore Nordmann"
+          "name": "Kore Nordmann",
+          "email": "mail@kore-nordmann.de"
         }
       ],
       "description": "Diff implementation",
@@ -1510,8 +1510,8 @@
       },
       "funding": [
         {
-          "type": "github",
-          "url": "https://github.com/sebastianbergmann"
+          "url": "https://github.com/sebastianbergmann",
+          "type": "github"
         }
       ],
       "time": "2024-03-02T07:15:17+00:00"
@@ -1556,8 +1556,8 @@
       ],
       "authors": [
         {
-          "email": "sebastian@phpunit.de",
-          "name": "Sebastian Bergmann"
+          "name": "Sebastian Bergmann",
+          "email": "sebastian@phpunit.de"
         }
       ],
       "description": "Provides functionality to handle HHVM/PHP environments",
@@ -1574,8 +1574,8 @@
       },
       "funding": [
         {
-          "type": "github",
-          "url": "https://github.com/sebastianbergmann"
+          "url": "https://github.com/sebastianbergmann",
+          "type": "github"
         }
       ],
       "time": "2024-03-23T08:47:14+00:00"
@@ -1619,24 +1619,24 @@
       ],
       "authors": [
         {
-          "email": "sebastian@phpunit.de",
-          "name": "Sebastian Bergmann"
+          "name": "Sebastian Bergmann",
+          "email": "sebastian@phpunit.de"
         },
         {
-          "email": "whatthejeff@gmail.com",
-          "name": "Jeff Welch"
+          "name": "Jeff Welch",
+          "email": "whatthejeff@gmail.com"
         },
         {
-          "email": "github@wallbash.com",
-          "name": "Volker Dusch"
+          "name": "Volker Dusch",
+          "email": "github@wallbash.com"
         },
         {
-          "email": "aharvey@php.net",
-          "name": "Adam Harvey"
+          "name": "Adam Harvey",
+          "email": "aharvey@php.net"
         },
         {
-          "email": "bschussek@gmail.com",
-          "name": "Bernhard Schussek"
+          "name": "Bernhard Schussek",
+          "email": "bschussek@gmail.com"
         }
       ],
       "description": "Provides the functionality to export PHP variables for visualization",
@@ -1652,20 +1652,20 @@
       },
       "funding": [
         {
-          "type": "github",
-          "url": "https://github.com/sebastianbergmann"
+          "url": "https://github.com/sebastianbergmann",
+          "type": "github"
         },
         {
-          "type": "liberapay",
-          "url": "https://liberapay.com/sebastianbergmann"
+          "url": "https://liberapay.com/sebastianbergmann",
+          "type": "liberapay"
         },
         {
-          "type": "thanks_dev",
-          "url": "https://thanks.dev/u/gh/sebastianbergmann"
+          "url": "https://thanks.dev/u/gh/sebastianbergmann",
+          "type": "thanks_dev"
         },
         {
-          "type": "tidelift",
-          "url": "https://tidelift.com/funding/github/packagist/sebastian/exporter"
+          "url": "https://tidelift.com/funding/github/packagist/sebastian/exporter",
+          "type": "tidelift"
         }
       ],
       "time": "2025-09-24T06:09:11+00:00"
@@ -1710,8 +1710,8 @@
       ],
       "authors": [
         {
-          "email": "sebastian@phpunit.de",
-          "name": "Sebastian Bergmann"
+          "name": "Sebastian Bergmann",
+          "email": "sebastian@phpunit.de"
         }
       ],
       "description": "Snapshotting of global state",
@@ -1726,8 +1726,8 @@
       },
       "funding": [
         {
-          "type": "github",
-          "url": "https://github.com/sebastianbergmann"
+          "url": "https://github.com/sebastianbergmann",
+          "type": "github"
         }
       ],
       "time": "2024-03-02T07:19:19+00:00"
@@ -1770,8 +1770,8 @@
       ],
       "authors": [
         {
-          "email": "sebastian@phpunit.de",
           "name": "Sebastian Bergmann",
+          "email": "sebastian@phpunit.de",
           "role": "lead"
         }
       ],
@@ -1784,8 +1784,8 @@
       },
       "funding": [
         {
-          "type": "github",
-          "url": "https://github.com/sebastianbergmann"
+          "url": "https://github.com/sebastianbergmann",
+          "type": "github"
         }
       ],
       "time": "2023-12-21T08:38:20+00:00"
@@ -1829,8 +1829,8 @@
       ],
       "authors": [
         {
-          "email": "sebastian@phpunit.de",
-          "name": "Sebastian Bergmann"
+          "name": "Sebastian Bergmann",
+          "email": "sebastian@phpunit.de"
         }
       ],
       "description": "Traverses array structures and object graphs to enumerate all referenced objects",
@@ -1841,8 +1841,8 @@
       },
       "funding": [
         {
-          "type": "github",
-          "url": "https://github.com/sebastianbergmann"
+          "url": "https://github.com/sebastianbergmann",
+          "type": "github"
         }
       ],
       "time": "2023-02-03T07:08:32+00:00"
@@ -1884,8 +1884,8 @@
       ],
       "authors": [
         {
-          "email": "sebastian@phpunit.de",
-          "name": "Sebastian Bergmann"
+          "name": "Sebastian Bergmann",
+          "email": "sebastian@phpunit.de"
         }
       ],
       "description": "Allows reflection of object attributes, including inherited and non-public ones",
@@ -1896,8 +1896,8 @@
       },
       "funding": [
         {
-          "type": "github",
-          "url": "https://github.com/sebastianbergmann"
+          "url": "https://github.com/sebastianbergmann",
+          "type": "github"
         }
       ],
       "time": "2023-02-03T07:06:18+00:00"
@@ -1939,16 +1939,16 @@
       ],
       "authors": [
         {
-          "email": "sebastian@phpunit.de",
-          "name": "Sebastian Bergmann"
+          "name": "Sebastian Bergmann",
+          "email": "sebastian@phpunit.de"
         },
         {
-          "email": "whatthejeff@gmail.com",
-          "name": "Jeff Welch"
+          "name": "Jeff Welch",
+          "email": "whatthejeff@gmail.com"
         },
         {
-          "email": "aharvey@php.net",
-          "name": "Adam Harvey"
+          "name": "Adam Harvey",
+          "email": "aharvey@php.net"
         }
       ],
       "description": "Provides functionality to recursively process PHP variables",
@@ -1960,20 +1960,20 @@
       },
       "funding": [
         {
-          "type": "github",
-          "url": "https://github.com/sebastianbergmann"
+          "url": "https://github.com/sebastianbergmann",
+          "type": "github"
         },
         {
-          "type": "liberapay",
-          "url": "https://liberapay.com/sebastianbergmann"
+          "url": "https://liberapay.com/sebastianbergmann",
+          "type": "liberapay"
         },
         {
-          "type": "thanks_dev",
-          "url": "https://thanks.dev/u/gh/sebastianbergmann"
+          "url": "https://thanks.dev/u/gh/sebastianbergmann",
+          "type": "thanks_dev"
         },
         {
-          "type": "tidelift",
-          "url": "https://tidelift.com/funding/github/packagist/sebastian/recursion-context"
+          "url": "https://tidelift.com/funding/github/packagist/sebastian/recursion-context",
+          "type": "tidelift"
         }
       ],
       "time": "2025-08-10T07:50:56+00:00"
@@ -2015,8 +2015,8 @@
       ],
       "authors": [
         {
-          "email": "sebastian@phpunit.de",
           "name": "Sebastian Bergmann",
+          "email": "sebastian@phpunit.de",
           "role": "lead"
         }
       ],
@@ -2028,8 +2028,8 @@
       },
       "funding": [
         {
-          "type": "github",
-          "url": "https://github.com/sebastianbergmann"
+          "url": "https://github.com/sebastianbergmann",
+          "type": "github"
         }
       ],
       "time": "2023-02-03T07:10:45+00:00"
@@ -2068,8 +2068,8 @@
       ],
       "authors": [
         {
-          "email": "sebastian@phpunit.de",
           "name": "Sebastian Bergmann",
+          "email": "sebastian@phpunit.de",
           "role": "lead"
         }
       ],
@@ -2081,8 +2081,8 @@
       },
       "funding": [
         {
-          "type": "github",
-          "url": "https://github.com/sebastianbergmann"
+          "url": "https://github.com/sebastianbergmann",
+          "type": "github"
         }
       ],
       "time": "2023-02-07T11:34:05+00:00"
@@ -2119,8 +2119,8 @@
       ],
       "authors": [
         {
-          "email": "arne@blankerts.de",
           "name": "Arne Blankerts",
+          "email": "arne@blankerts.de",
           "role": "Developer"
         }
       ],
@@ -2131,8 +2131,8 @@
       },
       "funding": [
         {
-          "type": "github",
-          "url": "https://github.com/theseer"
+          "url": "https://github.com/theseer",
+          "type": "github"
         }
       ],
       "time": "2025-11-17T20:03:58+00:00"
