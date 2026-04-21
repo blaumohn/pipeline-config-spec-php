@@ -30,36 +30,45 @@ final class ConfigLoader
         return $this->snapshotFromState($state);
     }
 
-    public function loadSystem(array $keys): ConfigSnapshot
+    public function loadOverrides(string $pipeline, string $phase, array $rawOverrides): ConfigSnapshot
     {
-        $values = [];
-        $sources = [];
-        foreach ($keys as $key) {
-            if (!is_string($key) || $key === '') {
-                continue;
-            }
-            $value = getenv($key);
-            if ($value === false) {
-                continue;
-            }
-            $values[$key] = $value;
-            $sources[$key] = 'system';
-        }
+        $generic = $this->collectOverrides($rawOverrides, null, $phase);
+        $specific = $this->collectOverrides($rawOverrides, $pipeline, $phase);
+        $merged = array_merge($generic, $specific);
+
+        $values = array_column($merged, 'value', 'var');
+        $sources = array_fill_keys(array_keys($values), 'cli');
         return new ConfigSnapshot($values, $sources, []);
     }
 
-    public function loadOverrides(array $overrides): ConfigSnapshot
+    private function collectOverrides(array $rawOverrides, ?string $pipeline, string $phase): array
     {
-        $values = [];
-        $sources = [];
-        foreach ($overrides as $key => $value) {
+        $collected = [];
+        foreach ($rawOverrides as $key => $value) {
             if (!is_string($key)) {
                 continue;
             }
-            $values[$key] = $value;
-            $sources[$key] = 'cli';
+            $parsed = $this->parseOverrideKey($key);
+            if ($parsed['pipeline'] !== $pipeline || $parsed['phase'] !== $phase) {
+                continue;
+            }
+            $collected[] = ['var' => $parsed['var'], 'value' => $value];
         }
-        return new ConfigSnapshot($values, $sources, []);
+        return $collected;
+    }
+
+    private function parseOverrideKey(string $key): array
+    {
+        $parts = explode('.', $key);
+        if (count($parts) === 3) {
+            return ['pipeline' => null, 'phase' => $parts[0], 'group' => $parts[1], 'var' => $parts[2]];
+        }
+        if (count($parts) === 4) {
+            return ['pipeline' => $parts[0], 'phase' => $parts[1], 'group' => $parts[2], 'var' => $parts[3]];
+        }
+        throw new \RuntimeException(
+            "Ungültiger Override-Schlüssel (erwartet phase.gruppe.var oder pipeline.phase.gruppe.var): {$key}"
+        );
     }
 
     private function configFiles(string $pipeline, string $phase): array

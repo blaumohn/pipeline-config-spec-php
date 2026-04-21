@@ -63,14 +63,14 @@ final class ConfigCompilerTest extends TestCase
         $compiler->compile('dev', 'setvp', $root . '/out/config.php');
     }
 
-    public function testCompileReadsSystemValueWhenSourceAllowsIt(): void
+    public function testCompileReadsCliOverrideWhenSourceAllowsIt(): void
     {
         $root = $this->createRoot();
         $this->writeManifest($root, [
             'variable-groups' => [
                 'security' => [
                     'IP_SALT' => [
-                        'sources' => ['system'],
+                        'sources' => ['cli'],
                     ],
                 ],
             ],
@@ -83,11 +83,14 @@ final class ConfigCompilerTest extends TestCase
                 'dev' => [],
             ],
         ]);
-        putenv('IP_SALT=test-salt');
 
-        $compiled = $this->compilePayload($root);
+        $compiler = new ConfigCompiler($root);
+        $targetPath = $root . '/out/config.php';
+        $path = $compiler->compile('dev', 'runtime', $targetPath, [
+            'runtime.security.IP_SALT' => 'test-salt',
+        ]);
+        $compiled = $this->readConfig($path);
         $values = $compiled['values'] ?? [];
-        putenv('IP_SALT');
 
         self::assertSame('test-salt', $values['IP_SALT'] ?? null);
     }
@@ -132,7 +135,7 @@ final class ConfigCompilerTest extends TestCase
 
         $compiler = new ConfigCompiler($root);
         $compiler->compile('dev', 'runtime', $root . '/out/config.php', [
-            'PIPELINE' => 'prod',
+            'runtime.app.PIPELINE' => 'prod',
         ]);
     }
 
@@ -146,7 +149,7 @@ final class ConfigCompilerTest extends TestCase
 
         $compiler = new ConfigCompiler($root);
         $compiler->compile('dev', 'runtime', $root . '/out/config.php', [
-            'PHASE' => 'build',
+            'runtime.app.PHASE' => 'build',
         ]);
     }
 

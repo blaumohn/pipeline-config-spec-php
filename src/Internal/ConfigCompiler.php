@@ -70,12 +70,10 @@ final class ConfigCompiler
         $this->manifestValidator->validate($this->manifest->data());
         $this->assertValidPipelinePhase($pipeline, $phase);
 
-        $systemKeys = $this->manifest->variableKeys();
         $fileLayer = $this->loader->load($pipeline, $phase);
-        $systemLayer = $this->loader->loadSystem($systemKeys);
-        $cliLayer = $this->loader->loadOverrides($overrides);
+        $cliLayer = $this->loader->loadOverrides($pipeline, $phase, $overrides);
 
-        return $this->mergeLayers([$fileLayer, $systemLayer, $cliLayer]);
+        return $this->mergeLayers([$fileLayer, $cliLayer]);
     }
 
     private function mergeLayers(array $layers): ConfigSnapshot

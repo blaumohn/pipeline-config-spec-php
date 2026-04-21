@@ -22,17 +22,42 @@ final class ConfigLoaderTest extends TestCase
         self::assertSame('https://example.test', $snapshot->values()['APP_URL'] ?? null);
     }
 
-    public function testLoadsSystemLayerForRequestedKeys(): void
+    public function testLoadsOverridesInSpecificityOrder(): void
     {
         $root = $this->createRoot();
         $loader = new ConfigLoader($root);
-        putenv('IP_SALT=test-salt');
 
-        $snapshot = $loader->loadSystem(['IP_SALT']);
-        putenv('IP_SALT');
+        $snapshot = $loader->loadOverrides('preview', 'deploy', [
+            'deploy.ftp.FTP_HOST'         => 'generic-host',
+            'preview.deploy.ftp.FTP_HOST' => 'specific-host',
+            'deploy.ftp.FTP_PORT'         => '21',
+        ]);
 
-        self::assertSame('test-salt', $snapshot->values()['IP_SALT'] ?? null);
-        self::assertSame('system', $snapshot->sources()['IP_SALT'] ?? null);
+        self::assertSame('specific-host', $snapshot->values()['FTP_HOST'] ?? null);
+        self::assertSame('21', $snapshot->values()['FTP_PORT'] ?? null);
+        self::assertSame('cli', $snapshot->sources()['FTP_HOST'] ?? null);
+    }
+
+    public function testLoadOverridesIgnoresOtherPhases(): void
+    {
+        $root = $this->createRoot();
+        $loader = new ConfigLoader($root);
+
+        $snapshot = $loader->loadOverrides('preview', 'deploy', [
+            'runtime.smtp.SMTP_PASS' => 'secret',
+        ]);
+
+        self::assertSame([], $snapshot->values());
+    }
+
+    public function testLoadOverridesRejectsShortKey(): void
+    {
+        $this->expectException(\RuntimeException::class);
+        $this->expectExceptionMessage('Ungültiger Override-Schlüssel');
+
+        $root = $this->createRoot();
+        $loader = new ConfigLoader($root);
+        $loader->loadOverrides('dev', 'runtime', ['FTP_HOST' => 'host']);
     }
 
     private function createRoot(): string

@@ -73,8 +73,8 @@ final class ConfigPolicy
 
     private function sourceType(string $source): string
     {
-        if ($source === 'system' || $source === 'cli') {
-            return $source;
+        if ($source === 'cli') {
+            return 'cli';
         }
         if ($this->isLocalPath($source)) {
             return 'local';

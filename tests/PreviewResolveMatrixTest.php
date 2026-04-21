@@ -10,11 +10,6 @@ use Symfony\Component\Yaml\Yaml;
 
 final class PreviewResolveMatrixTest extends TestCase
 {
-    protected function tearDown(): void
-    {
-        $this->clearPreviewEnv();
-    }
-
     public function testPreviewDeployUsesLocalCredentialsWhenSystemLayerIsEmpty(): void
     {
         $root = $this->createRoot();
@@ -38,17 +33,18 @@ final class PreviewResolveMatrixTest extends TestCase
         );
     }
 
-    public function testPreviewDeployUsesSystemLayerBeforeLocal(): void
+    public function testPreviewDeployUsesCliOverrideBeforeLocal(): void
     {
         $root = $this->createRoot();
         $this->writePreviewConfig($root);
         $this->writeLocalConfig($root);
-        $this->setDeployEnv();
         $service = new PipelineConfigService($root);
 
-        $systemValues = $service->describe('preview', 'deploy');
-        self::assertSame('system-host', $systemValues['values']['FTP_HOST'] ?? null);
-        self::assertSame('system', $systemValues['sources']['FTP_HOST'] ?? null);
+        $report = $service->describe('preview', 'deploy', [
+            'preview.deploy.ftp.FTP_HOST' => 'override-host',
+        ]);
+        self::assertSame('override-host', $report['values']['FTP_HOST'] ?? null);
+        self::assertSame('cli', $report['sources']['FTP_HOST'] ?? null);
     }
 
     public function testPreviewDeployFailsWhenCredentialIsMissing(): void
@@ -63,17 +59,18 @@ final class PreviewResolveMatrixTest extends TestCase
         $service->values('preview', 'deploy');
     }
 
-    public function testPreviewDeployRejectsSystemSourceWhenManifestForbidsIt(): void
+    public function testPreviewDeployRejectsCliOverrideWhenManifestAllowsLocalOnly(): void
     {
         $this->expectException(\RuntimeException::class);
         $this->expectExceptionMessage('Variable in falscher Quelle: FTP_HOST');
 
         $root = $this->createRoot();
         $this->writePreviewConfig($root, allowSystemCredentials: false);
-        $this->setDeployEnv();
         $service = new PipelineConfigService($root);
 
-        $service->values('preview', 'deploy');
+        $service->values('preview', 'deploy', [
+            'preview.deploy.ftp.FTP_HOST' => 'override-host',
+        ]);
     }
 
     public function testPreviewDeployRejectsCliOverrideWhenManifestForbidsIt(): void
@@ -82,23 +79,24 @@ final class PreviewResolveMatrixTest extends TestCase
         $this->expectExceptionMessage('Variable in falscher Quelle: FTP_HOST');
 
         $root = $this->createRoot();
-        $this->writePreviewConfig($root);
+        $this->writePreviewConfig($root, allowSystemCredentials: false);
         $this->writeLocalConfig($root);
         $service = new PipelineConfigService($root);
 
         $service->values('preview', 'deploy', [
-            'FTP_HOST' => 'cli-host',
+            'preview.deploy.ftp.FTP_HOST' => 'override-host',
         ]);
     }
 
-    public function testPreviewRuntimeCompileUsesSystemSecretAndKeepsPhase(): void
+    public function testPreviewRuntimeCompileUsesCliSecretAndKeepsPhase(): void
     {
         $root = $this->createRoot();
         $this->writePreviewConfig($root);
-        $this->setRuntimeEnv();
         $service = new PipelineConfigService($root);
 
-        $path = $service->compile('preview', 'runtime', $root . '/out/runtime.php');
+        $path = $service->compile('preview', 'runtime', $root . '/out/runtime.php', [
+            'runtime.smtp.SMTP_PASS' => 'runtime-pass',
+        ]);
         $compiled = require $path;
 
         self::assertSame('preview', $compiled['pipeline_phase']['pipeline'] ?? null);
@@ -131,7 +129,7 @@ final class PreviewResolveMatrixTest extends TestCase
             'variable-groups' => [
                 'smtp' => [
                     'SMTP_PASS' => [
-                        'sources' => ['system', 'local'],
+                        'sources' => ['local', 'cli'],
                     ],
                     'SMTP_FROM_EMAIL' => [],
                     'SMTP_FROM_NAME' => [],
@@ -198,7 +196,7 @@ final class PreviewResolveMatrixTest extends TestCase
     private function sourceRule(bool $allowSystemCredentials): array
     {
         if ($allowSystemCredentials) {
-            return ['sources' => ['system', 'local']];
+            return ['sources' => ['local', 'cli']];
         }
         return ['sources' => ['local']];
     }
@@ -215,23 +213,5 @@ final class PreviewResolveMatrixTest extends TestCase
         }
     }
 
-    private function setDeployEnv(): void
-    {
-        putenv('FTP_HOST=system-host');
-        putenv('FTP_USER=system-user');
-        putenv('FTP_PASS=system-pass');
-    }
 
-    private function setRuntimeEnv(): void
-    {
-        putenv('SMTP_PASS=runtime-pass');
-    }
-
-    private function clearPreviewEnv(): void
-    {
-        putenv('SMTP_PASS');
-        putenv('FTP_HOST');
-        putenv('FTP_USER');
-        putenv('FTP_PASS');
-    }
 }
