@@ -21,27 +21,13 @@ final class ConfigLoader
 
     public function load(string $pipeline, string $phase): ConfigSnapshot
     {
-        $values = [];
-        $sources = [];
-        $loadedFiles = [];
+        $state = $this->emptyLoadState();
 
         foreach ($this->configFiles($pipeline, $phase) as $file) {
-            if (!is_file($file)) {
-                continue;
-            }
-            $parsed = Yaml::parseFile($file);
-            $data = $this->assertMapping($parsed, $file);
-            foreach ($this->flattenGroups($data) as $key => $value) {
-                if (!is_string($key)) {
-                    continue;
-                }
-                $values[$key] = $value;
-                $sources[$key] = $file;
-            }
-            $loadedFiles[] = $file;
+            $state = $this->mergeConfigFile($state, $file);
         }
 
-        return new ConfigSnapshot($values, $sources, $loadedFiles);
+        return $this->snapshotFromState($state);
     }
 
     public function loadSystem(array $keys): ConfigSnapshot
@@ -126,6 +112,59 @@ final class ConfigLoader
             }
         }
         return $flat;
+    }
+
+    private function emptyLoadState(): array
+    {
+        return [
+            'values' => [],
+            'sources' => [],
+            'loadedFiles' => [],
+        ];
+    }
+
+    private function mergeConfigFile(array $state, string $file): array
+    {
+        if (!is_file($file)) {
+            return $state;
+        }
+
+        $entries = $this->loadFileEntries($file);
+        $state = $this->mergeEntries($state, $entries, $file);
+        $state['loadedFiles'][] = $file;
+
+        return $state;
+    }
+
+    private function loadFileEntries(string $file): array
+    {
+        $parsed = Yaml::parseFile($file);
+        $data = $this->assertMapping($parsed, $file);
+
+        return $this->flattenGroups($data);
+    }
+
+    private function mergeEntries(array $state, array $entries, string $file): array
+    {
+        foreach ($entries as $key => $value) {
+            if (!is_string($key)) {
+                continue;
+            }
+
+            $state['values'][$key] = $value;
+            $state['sources'][$key] = $file;
+        }
+
+        return $state;
+    }
+
+    private function snapshotFromState(array $state): ConfigSnapshot
+    {
+        return new ConfigSnapshot(
+            $state['values'],
+            $state['sources'],
+            $state['loadedFiles']
+        );
     }
 
     private function assertMapping(mixed $data, string $file): array
