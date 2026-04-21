@@ -72,6 +72,25 @@ pipelines:
 CLI overrides are treated like regular config variables. An override is only
 valid when the key exists for the current pipeline phase and its `sources`
 allow CLI sources.
+Overrides are provided as nested mappings and are resolved with this
+specificity order: `<phase>`, then `<pipeline>.<phase>`.
+
+```json
+{
+  "deploy": {
+    "ftp": {
+      "FTP_PASS": "generic-secret"
+    }
+  },
+  "preview": {
+    "deploy": {
+      "ftp": {
+        "FTP_PASS": "specific-secret"
+      }
+    }
+  }
+}
+```
 
 ## PHP usage
 

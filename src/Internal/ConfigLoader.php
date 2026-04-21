@@ -32,43 +32,61 @@ final class ConfigLoader
 
     public function loadOverrides(string $pipeline, string $phase, array $rawOverrides): ConfigSnapshot
     {
-        $generic = $this->collectOverrides($rawOverrides, null, $phase);
-        $specific = $this->collectOverrides($rawOverrides, $pipeline, $phase);
-        $merged = array_merge($generic, $specific);
-
-        $values = array_column($merged, 'value', 'var');
-        $sources = array_fill_keys(array_keys($values), 'cli');
-        return new ConfigSnapshot($values, $sources, []);
-    }
-
-    private function collectOverrides(array $rawOverrides, ?string $pipeline, string $phase): array
-    {
-        $collected = [];
-        foreach ($rawOverrides as $key => $value) {
-            if (!is_string($key)) {
-                continue;
-            }
-            $parsed = $this->parseOverrideKey($key);
-            if ($parsed['pipeline'] !== $pipeline || $parsed['phase'] !== $phase) {
-                continue;
-            }
-            $collected[] = ['var' => $parsed['var'], 'value' => $value];
-        }
-        return $collected;
-    }
-
-    private function parseOverrideKey(string $key): array
-    {
-        $parts = explode('.', $key);
-        if (count($parts) === 3) {
-            return ['pipeline' => null, 'phase' => $parts[0], 'group' => $parts[1], 'var' => $parts[2]];
-        }
-        if (count($parts) === 4) {
-            return ['pipeline' => $parts[0], 'phase' => $parts[1], 'group' => $parts[2], 'var' => $parts[3]];
-        }
-        throw new \RuntimeException(
-            "Ungültiger Override-Schlüssel (erwartet phase.gruppe.var oder pipeline.phase.gruppe.var): {$key}"
+        $state = $this->emptyLoadState();
+        $state = $this->mergeOverrideBranch($state, $rawOverrides, [$phase], $phase);
+        $state = $this->mergeOverrideBranch(
+            $state,
+            $rawOverrides,
+            [$pipeline, $phase],
+            $pipeline . '.' . $phase
         );
+
+        return $this->snapshotFromState($state);
+    }
+
+    private function mergeOverrideBranch(array $state, array $rawOverrides, array $path, string $patternId): array
+    {
+        $resolved = $this->resolveOverrideBranch($rawOverrides, $path, $patternId);
+        if (!$resolved['found']) {
+            return $state;
+        }
+
+        $state = $this->mergeEntries($state, $resolved['entries'], 'cli');
+        $state['loadedFiles'][] = $patternId;
+
+        return $state;
+    }
+
+    private function resolveOverrideBranch(array $rawOverrides, array $path, string $patternId): array
+    {
+        $node = $this->readNodeAtPath($rawOverrides, $path);
+        if ($node === null) {
+            return ['found' => false, 'entries' => []];
+        }
+
+        $entries = $this->assertOverrideMapping($node['value'], $patternId);
+        return ['found' => true, 'entries' => $this->flattenGroups($entries)];
+    }
+
+    private function readNodeAtPath(array $rawOverrides, array $path): ?array
+    {
+        $node = $rawOverrides;
+        foreach ($path as $segment) {
+            if (!is_string($segment) || !is_array($node) || !array_key_exists($segment, $node)) {
+                return null;
+            }
+            $node = $node[$segment];
+        }
+
+        return ['value' => $node];
+    }
+
+    private function assertOverrideMapping(mixed $data, string $patternId): array
+    {
+        if (!is_array($data)) {
+            throw new \RuntimeException("Override-Struktur ungueltig fuer {$patternId}: Mapping erwartet.");
+        }
+        return $data;
     }
 
     private function configFiles(string $pipeline, string $phase): array

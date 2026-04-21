@@ -41,7 +41,7 @@ final class PreviewResolveMatrixTest extends TestCase
         $service = new PipelineConfigService($root);
 
         $report = $service->describe('preview', 'deploy', [
-            'preview.deploy.ftp.FTP_HOST' => 'override-host',
+            'preview' => ['deploy' => ['ftp' => ['FTP_HOST' => 'override-host']]],
         ]);
         self::assertSame('override-host', $report['values']['FTP_HOST'] ?? null);
         self::assertSame('cli', $report['sources']['FTP_HOST'] ?? null);
@@ -69,7 +69,7 @@ final class PreviewResolveMatrixTest extends TestCase
         $service = new PipelineConfigService($root);
 
         $service->values('preview', 'deploy', [
-            'preview.deploy.ftp.FTP_HOST' => 'override-host',
+            'preview' => ['deploy' => ['ftp' => ['FTP_HOST' => 'override-host']]],
         ]);
     }
 
@@ -84,7 +84,7 @@ final class PreviewResolveMatrixTest extends TestCase
         $service = new PipelineConfigService($root);
 
         $service->values('preview', 'deploy', [
-            'preview.deploy.ftp.FTP_HOST' => 'override-host',
+            'preview' => ['deploy' => ['ftp' => ['FTP_HOST' => 'override-host']]],
         ]);
     }
 
@@ -95,7 +95,7 @@ final class PreviewResolveMatrixTest extends TestCase
         $service = new PipelineConfigService($root);
 
         $path = $service->compile('preview', 'runtime', $root . '/out/runtime.php', [
-            'runtime.smtp.SMTP_PASS' => 'runtime-pass',
+            'runtime' => ['smtp' => ['SMTP_PASS' => 'runtime-pass']],
         ]);
         $compiled = require $path;
 

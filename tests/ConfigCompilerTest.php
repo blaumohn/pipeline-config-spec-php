@@ -87,7 +87,7 @@ final class ConfigCompilerTest extends TestCase
         $compiler = new ConfigCompiler($root);
         $targetPath = $root . '/out/config.php';
         $path = $compiler->compile('dev', 'runtime', $targetPath, [
-            'runtime.security.IP_SALT' => 'test-salt',
+            'runtime' => ['security' => ['IP_SALT' => 'test-salt']],
         ]);
         $compiled = $this->readConfig($path);
         $values = $compiled['values'] ?? [];
@@ -135,7 +135,7 @@ final class ConfigCompilerTest extends TestCase
 
         $compiler = new ConfigCompiler($root);
         $compiler->compile('dev', 'runtime', $root . '/out/config.php', [
-            'runtime.app.PIPELINE' => 'prod',
+            'runtime' => ['app' => ['PIPELINE' => 'prod']],
         ]);
     }
 
@@ -149,7 +149,7 @@ final class ConfigCompilerTest extends TestCase
 
         $compiler = new ConfigCompiler($root);
         $compiler->compile('dev', 'runtime', $root . '/out/config.php', [
-            'runtime.app.PHASE' => 'build',
+            'runtime' => ['app' => ['PHASE' => 'build']],
         ]);
     }
 
