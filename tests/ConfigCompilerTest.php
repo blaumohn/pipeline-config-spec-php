@@ -34,7 +34,7 @@ final class ConfigCompilerTest extends TestCase
         $root = $this->createRoot();
         $this->writeManifest($root, $this->manifestData());
         $this->seedYamlFiles($root);
-        $this->writeYaml($root, 'config/common.yaml', "EXTRA: ignore\n");
+        $this->writeYaml($root, 'config/runtime.yaml', "EXTRA: ignore\n");
 
         $this->compilePayload($root);
     }

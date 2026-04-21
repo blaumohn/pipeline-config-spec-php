@@ -79,10 +79,10 @@ final class ConfigLoader
     private function patterns(): array
     {
         $configDir = $this->configDir;
+
         return [
-            $configDir . '/common.yaml',
-            $configDir . '/{pipeline}.yaml',
-            '.local/{pipeline}.yaml',
+            $configDir . '/{phase}.yaml',
+            '.local/{phase}.yaml',
             $configDir . '/{pipeline}-{phase}.yaml',
             '.local/{pipeline}-{phase}.yaml',
         ];

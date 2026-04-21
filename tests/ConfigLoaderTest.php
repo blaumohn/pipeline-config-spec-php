@@ -52,10 +52,10 @@ final class ConfigLoaderTest extends TestCase
 
     private function seedYamlFiles(string $root): void
     {
-        $this->writeYaml($root, 'config/common.yaml', "APP_ENV: first\n");
-        $this->writeYaml($root, 'config/dev.yaml', "APP_ENV: second\n");
-        $this->writeYaml($root, '.local/dev.yaml', "LOCAL: local\n");
+        $this->writeYaml($root, 'config/runtime.yaml', "APP_ENV: first\n");
+        $this->writeYaml($root, '.local/runtime.yaml', "LOCAL: local\n");
         $this->writeYaml($root, 'config/dev-runtime.yaml', "APP_URL: https://example.test\n");
+        $this->writeYaml($root, '.local/dev-runtime.yaml', "APP_ENV: second\n");
     }
 
     private function writeYaml(string $root, string $file, string $content): void

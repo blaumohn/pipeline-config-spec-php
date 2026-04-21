@@ -14,11 +14,10 @@ It includes a YAML loader, manifest validation, and config-source checks.
 
 ## Config file order
 
-1) `config/common.yaml` (optional)
-2) `config/<PIPELINE>.yaml`
-3) `.local/<PIPELINE>.yaml`
-4) `config/<PIPELINE>-<PHASE>.yaml`
-5) `.local/<PIPELINE>-<PHASE>.yaml`
+1) `config/<PHASE>.yaml`
+2) `.local/<PHASE>.yaml`
+3) `config/<PIPELINE>-<PHASE>.yaml`
+4) `.local/<PIPELINE>-<PHASE>.yaml`
 
 ## Manifest format
 
