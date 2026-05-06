@@ -56,6 +56,19 @@ pipelines:
 - `PIPELINE` and `PHASE` are derived internally from the pipeline phase and do
   not belong in the app manifest.
 
+## Config values and example values
+
+Config files contain effective values for a pipeline phase. They are not a
+place to store example values.
+
+Example values belong in `variable-groups.<group>.<key>.meta.example` in the
+manifest. They explain a possible value, but they do not replace a required
+config source.
+
+If a pipeline phase needs a value and neither a config file nor an allowed
+local, system, or CLI source provides it, validation fails. This keeps missing
+instance values visible in CI/CD.
+
 ## API (language-agnostic)
 
 - **Inputs**: `pipeline`, `phase`

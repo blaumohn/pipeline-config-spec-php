@@ -57,6 +57,19 @@ pipelines:
 - `PIPELINE` und `PHASE` werden nur lib-intern aus der Pipeline-Phase
   abgeleitet und stehen nicht im App-Manifest.
 
+## Config-Werte und Beispielwerte
+
+Config-Dateien enthalten wirksame Werte für eine Pipeline-Phase. Sie sind
+keine Ablage für Beispielwerte.
+
+Beispielwerte gehören in `variable-groups.<gruppe>.<key>.meta.example` im
+Manifest. Sie erklären einen möglichen Wert, ersetzen aber keine notwendige
+Config-Quelle.
+
+Wenn eine Pipeline-Phase einen Wert braucht und weder eine Config-Datei noch
+eine erlaubte lokale, System- oder CLI-Quelle ihn liefert, schlägt die
+Validierung fehl. So bleiben fehlende Instanzwerte in CI/CD sichtbar.
+
 ## API (sprachunabhängig)
 
 - **Inputs**: `pipeline`, `phase`
