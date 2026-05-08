@@ -8,6 +8,7 @@ use PipelineConfigSpec\Internal\ConfigPolicy;
 use PipelineConfigSpec\Internal\ConfigSnapshot;
 use PipelineConfigSpec\Internal\Manifest;
 use PHPUnit\Framework\TestCase;
+use Symfony\Component\Filesystem\Path;
 use Symfony\Component\Yaml\Yaml;
 
 final class ConfigPolicyTest extends TestCase
@@ -101,20 +102,18 @@ final class ConfigPolicyTest extends TestCase
 
     private function createRoot(): string
     {
-        $root = rtrim(sys_get_temp_dir(), DIRECTORY_SEPARATOR) . '/config-pipeline-spec-' . uniqid('', true);
+        $root = Path::join(sys_get_temp_dir(), 'config-pipeline-spec-' . uniqid('', true));
         if (!mkdir($root, 0775, true) && !is_dir($root)) {
             throw new \RuntimeException('Failed to create root directory.');
         }
-        if (!mkdir($root . '/config', 0775, true) && !is_dir($root . '/config')) {
-            throw new \RuntimeException('Failed to create config directory.');
-        }
+        mkdir(Path::join($root, 'pipeline-config'), 0775, true);
         return $root;
     }
 
     private function writeManifest(string $root, array $manifest): void
     {
         $payload = Yaml::dump($manifest, 8, 2);
-        $path = $root . '/config/config.manifest.yaml';
+        $path = Path::join($root, 'pipeline-config', 'manifest.yaml');
         if (file_put_contents($path, $payload) === false) {
             throw new \RuntimeException('Failed to write manifest.');
         }

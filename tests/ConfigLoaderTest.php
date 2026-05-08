@@ -6,6 +6,7 @@ namespace PipelineConfigSpec\Tests;
 
 use PipelineConfigSpec\Internal\ConfigLoader;
 use PHPUnit\Framework\TestCase;
+use Symfony\Component\Filesystem\Path;
 
 final class ConfigLoaderTest extends TestCase
 {
@@ -15,93 +16,51 @@ final class ConfigLoaderTest extends TestCase
         $this->seedYamlFiles($root);
 
         $loader = new ConfigLoader($root);
-        $snapshot = $loader->load('dev', 'runtime');
+        $snapshot = $loader->load('dev');
 
         self::assertSame('second', $snapshot->values()['APP_ENV'] ?? null);
         self::assertSame('local', $snapshot->values()['LOCAL'] ?? null);
         self::assertSame('https://example.test', $snapshot->values()['APP_URL'] ?? null);
     }
 
-    public function testLoadsOverridesInSpecificityOrder(): void
+    public function testLoadOverridesAppliesVars(): void
     {
         $root = $this->createRoot();
         $loader = new ConfigLoader($root);
 
-        $snapshot = $loader->loadOverrides('preview', 'deploy', [
-            'deploy' => [
-                'ftp' => [
-                    'FTP_HOST' => 'generic-host',
-                    'FTP_PORT' => '21',
-                ],
-            ],
-            'preview' => [
-                'deploy' => [
-                    'ftp' => [
-                        'FTP_HOST' => 'specific-host',
-                    ],
-                ],
-            ],
+        $snapshot = $loader->loadOverrides([
+            'SFTP_HOST' => 'sftp-server',
+            'SFTP_PORT' => '22',
         ]);
 
-        self::assertSame('specific-host', $snapshot->values()['FTP_HOST'] ?? null);
-        self::assertSame('21', $snapshot->values()['FTP_PORT'] ?? null);
-        self::assertSame('cli', $snapshot->sources()['FTP_HOST'] ?? null);
-        self::assertSame(['deploy', 'preview.deploy'], $snapshot->loadedFiles());
+        self::assertSame('sftp-server', $snapshot->values()['SFTP_HOST'] ?? null);
+        self::assertSame('22', $snapshot->values()['SFTP_PORT'] ?? null);
+        self::assertSame('cli', $snapshot->sources()['SFTP_HOST'] ?? null);
+        self::assertSame('cli', $snapshot->sources()['SFTP_PORT'] ?? null);
+        self::assertSame(['cli'], $snapshot->loadedFiles());
     }
 
-    public function testLoadOverridesIgnoresOtherPhases(): void
+    public function testLoadOverridesEmptyReturnsEmpty(): void
     {
         $root = $this->createRoot();
         $loader = new ConfigLoader($root);
 
-        $snapshot = $loader->loadOverrides('preview', 'deploy', [
-            'runtime' => [
-                'smtp' => [
-                    'SMTP_PASS' => 'secret',
-                ],
-            ],
-        ]);
+        $snapshot = $loader->loadOverrides([]);
 
         self::assertSame([], $snapshot->values());
-    }
-
-    public function testLoadOverridesRejectsNullOnRelevantBranch(): void
-    {
-        $this->expectException(\RuntimeException::class);
-        $this->expectExceptionMessage('Override-Struktur ungueltig');
-
-        $root = $this->createRoot();
-        $loader = new ConfigLoader($root);
-        $loader->loadOverrides('dev', 'runtime', ['runtime' => null]);
-    }
-
-    public function testLoadOverridesIgnoresInvalidIrrelevantBranch(): void
-    {
-        $root = $this->createRoot();
-        $loader = new ConfigLoader($root);
-
-        $snapshot = $loader->loadOverrides('preview', 'deploy', [
-            'runtime' => 'invalid',
-            'deploy' => [
-                'smtp' => [
-                    'SMTP_USER' => 'bot',
-                ],
-            ],
-        ]);
-
-        self::assertSame('bot', $snapshot->values()['SMTP_USER'] ?? null);
+        self::assertSame([], $snapshot->loadedFiles());
     }
 
     private function createRoot(): string
     {
-        $root = rtrim(sys_get_temp_dir(), DIRECTORY_SEPARATOR) . '/config-pipeline-spec-' . uniqid('', true);
+        $root = Path::join(sys_get_temp_dir(), 'config-pipeline-spec-' . uniqid('', true));
         if (!mkdir($root, 0775, true) && !is_dir($root)) {
             throw new \RuntimeException('Failed to create root directory.');
         }
-        if (!mkdir($root . '/config', 0775, true) && !is_dir($root . '/config')) {
-            throw new \RuntimeException('Failed to create config directory.');
+        if (!mkdir(Path::join($root, 'pipeline-config'), 0775, true)) {
+            throw new \RuntimeException('Failed to create pipeline-config directory.');
         }
-        if (!mkdir($root . '/.local', 0775, true) && !is_dir($root . '/.local')) {
+        if (!mkdir(Path::join($root, '.local'), 0775, true)) {
             throw new \RuntimeException('Failed to create local directory.');
         }
         return $root;
@@ -109,19 +68,13 @@ final class ConfigLoaderTest extends TestCase
 
     private function seedYamlFiles(string $root): void
     {
-        $this->writeYaml($root, 'config/runtime.yaml', "APP_ENV: first\n");
-        $this->writeYaml($root, '.local/runtime.yaml', "LOCAL: local\n");
-        $this->writeYaml($root, 'config/dev-runtime.yaml', "APP_URL: https://example.test\n");
-        $this->writeYaml($root, '.local/dev-runtime.yaml', "APP_ENV: second\n");
+        $this->writeYaml($root, Path::join('pipeline-config', 'dev.yaml'), "app:\n  APP_ENV: first\n  APP_URL: https://example.test\n");
+        $this->writeYaml($root, Path::join('.local', 'pipeline-config.yaml'), "app:\n  APP_ENV: second\n  LOCAL: local\n");
     }
 
     private function writeYaml(string $root, string $file, string $content): void
     {
-        $path = $root . '/' . $file;
-        $dir = dirname($path);
-        if (!is_dir($dir)) {
-            mkdir($dir, 0775, true);
-        }
+        $path = Path::join($root, $file);
         if (file_put_contents($path, $content) === false) {
             throw new \RuntimeException('Failed to write yaml file.');
         }

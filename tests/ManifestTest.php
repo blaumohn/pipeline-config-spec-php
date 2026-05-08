@@ -6,6 +6,7 @@ namespace PipelineConfigSpec\Tests;
 
 use PipelineConfigSpec\Internal\Manifest;
 use PHPUnit\Framework\TestCase;
+use Symfony\Component\Filesystem\Path;
 use Symfony\Component\Yaml\Yaml;
 
 final class ManifestTest extends TestCase
@@ -125,6 +126,29 @@ final class ManifestTest extends TestCase
         $manifest->resolvePhaseKeys('dev', 'build');
     }
 
+    public function testDefaultValuesAreResolved(): void
+    {
+        $manifest = $this->manifest([
+            'variable-groups' => [
+                'sftp' => [
+                    'SFTP_PORT' => ['default' => '22'],
+                    'SFTP_HOST' => [],
+                ],
+            ],
+            'phases' => [
+                'deploy' => ['sftp' => '*'],
+            ],
+            'pipelines' => [
+                'preview' => [],
+            ],
+        ]);
+
+        $defaults = $manifest->defaultValues();
+
+        self::assertSame('22', $defaults['SFTP_PORT'] ?? null);
+        self::assertArrayNotHasKey('SFTP_HOST', $defaults);
+    }
+
     public function testUnknownVariableFails(): void
     {
         $this->expectException(\RuntimeException::class);
@@ -158,12 +182,12 @@ final class ManifestTest extends TestCase
 
     private function createRoot(): string
     {
-        $root = rtrim(sys_get_temp_dir(), DIRECTORY_SEPARATOR) . '/config-pipeline-spec-' . uniqid('', true);
+        $root = Path::join(sys_get_temp_dir(), 'config-pipeline-spec-' . uniqid('', true));
         if (!mkdir($root, 0775, true) && !is_dir($root)) {
             throw new \RuntimeException('Failed to create root directory.');
         }
-        if (!mkdir($root . '/config', 0775, true) && !is_dir($root . '/config')) {
-            throw new \RuntimeException('Failed to create config directory.');
+        if (!mkdir(Path::join($root, 'pipeline-config'), 0775, true)) {
+            throw new \RuntimeException('Failed to create pipeline-config directory.');
         }
         return $root;
     }
@@ -171,7 +195,7 @@ final class ManifestTest extends TestCase
     private function writeManifest(string $root, array $manifest): void
     {
         $payload = Yaml::dump($manifest, 8, 2);
-        $path = $root . '/config/config.manifest.yaml';
+        $path = Path::join($root, 'pipeline-config', 'manifest.yaml');
         if (file_put_contents($path, $payload) === false) {
             throw new \RuntimeException('Failed to write manifest.');
         }

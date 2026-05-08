@@ -14,11 +14,12 @@ final class Manifest
     private ?array $groupKeys = null;
     private ?array $variableSourcePolicy = null;
     private ?array $phaseRules = null;
+    private ?array $defaultValuesCache = null;
 
-    public function __construct(string $rootPath, string $configDir = 'config')
+    public function __construct(string $rootPath, string $configDir = 'pipeline-config')
     {
         $configDir = $this->normalizeConfigDir($configDir);
-        $path = Path::join($rootPath, $configDir, 'config.manifest.yaml');
+        $path = Path::join($rootPath, $configDir, 'manifest.yaml');
         if (!is_file($path)) {
             throw new \RuntimeException("config.manifest.yaml fehlt: {$path}");
         }
@@ -70,6 +71,29 @@ final class Manifest
             $errors[] = "Disjunktheitsverletzung: {$key} in common.{$phase} und {$pipeline}.{$phase}";
         }
         return $errors;
+    }
+
+    public function defaultValues(): array
+    {
+        if ($this->defaultValuesCache !== null) {
+            return $this->defaultValuesCache;
+        }
+
+        $defaults = [];
+        foreach ($this->variableGroupsData() as $variables) {
+            if (!is_array($variables)) {
+                continue;
+            }
+            foreach ($variables as $key => $entry) {
+                $key = $this->requireString($key, 'Variablen-key fehlt');
+                if (is_array($entry) && array_key_exists('default', $entry)) {
+                    $defaults[$key] = (string) $entry['default'];
+                }
+            }
+        }
+
+        $this->defaultValuesCache = $defaults;
+        return $defaults;
     }
 
     public function sourcePolicyForVariable(string $variable): array
@@ -266,10 +290,10 @@ final class Manifest
 
     private function normalizeConfigDir(string $configDir): string
     {
-        $trimmed = trim($configDir, DIRECTORY_SEPARATOR);
-        if ($trimmed === '') {
-            return 'config';
+        if ($configDir === '') {
+            return 'pipeline-config';
         }
-        return $trimmed;
+        $normalized = trim(Path::normalize($configDir), '/');
+        return $normalized !== '' ? $normalized : 'pipeline-config';
     }
 }

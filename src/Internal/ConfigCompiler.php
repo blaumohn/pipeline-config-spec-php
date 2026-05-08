@@ -16,9 +16,9 @@ final class ConfigCompiler
     private ManifestValidator $manifestValidator;
     private ConfigPolicy $policy;
 
-    public function __construct(string $rootPath, string $configDir = 'config')
+    public function __construct(string $rootPath, string $configDir = 'pipeline-config')
     {
-        $this->rootPath = rtrim($rootPath, DIRECTORY_SEPARATOR);
+        $this->rootPath = Path::normalize($rootPath);
         $this->configDir = $this->normalizeConfigDir($configDir);
         $this->loader = new ConfigLoader($this->rootPath, $this->configDir);
         $this->manifest = new Manifest($this->rootPath, $this->configDir);
@@ -44,8 +44,17 @@ final class ConfigCompiler
     public function resolve(string $pipeline, string $phase, array $overrides = []): ConfigSnapshot
     {
         $snapshot = $this->buildSnapshot($pipeline, $phase, $overrides);
-        $this->assertValidSnapshot($pipeline, $phase, $snapshot);
-        return $snapshot;
+        $filtered = $this->filterToPhase($pipeline, $phase, $snapshot);
+        $this->assertValidSnapshot($pipeline, $phase, $filtered);
+        return $filtered;
+    }
+
+    private function filterToPhase(string $pipeline, string $phase, ConfigSnapshot $snapshot): ConfigSnapshot
+    {
+        $phaseKeys = array_flip($this->manifest->resolvePhaseKeys($pipeline, $phase));
+        $values = array_intersect_key($snapshot->values(), $phaseKeys);
+        $sources = array_intersect_key($snapshot->sources(), $phaseKeys);
+        return new ConfigSnapshot($values, $sources, $snapshot->loadedFiles());
     }
 
     public function validate(string $pipeline, string $phase, array $overrides = []): ConfigSnapshot
@@ -82,10 +91,28 @@ final class ConfigCompiler
         $this->manifestValidator->validate($this->manifest->data());
         $this->assertValidPipelinePhase($pipeline, $phase);
 
-        $fileLayer = $this->loader->load($pipeline, $phase);
-        $cliLayer = $this->loader->loadOverrides($pipeline, $phase, $overrides);
+        $fileLayer = $this->loader->load($pipeline);
+        $cliLayer = $this->loader->loadOverrides($overrides);
+        $merged = $this->mergeLayers([$fileLayer, $cliLayer]);
 
-        return $this->mergeLayers([$fileLayer, $cliLayer]);
+        return $this->applyDefaults($pipeline, $phase, $merged);
+    }
+
+    private function applyDefaults(string $pipeline, string $phase, ConfigSnapshot $snapshot): ConfigSnapshot
+    {
+        $defaults = $this->manifest->defaultValues();
+        $phaseKeys = $this->manifest->resolvePhaseKeys($pipeline, $phase);
+        $values = $snapshot->values();
+        $sources = $snapshot->sources();
+
+        foreach ($phaseKeys as $key) {
+            if (!array_key_exists($key, $values) && array_key_exists($key, $defaults)) {
+                $values[$key] = $defaults[$key];
+                $sources[$key] = 'default';
+            }
+        }
+
+        return new ConfigSnapshot($values, $sources, $snapshot->loadedFiles());
     }
 
     private function mergeLayers(array $layers): ConfigSnapshot
@@ -162,10 +189,10 @@ final class ConfigCompiler
 
     private function normalizeConfigDir(string $configDir): string
     {
-        $trimmed = trim($configDir, DIRECTORY_SEPARATOR);
-        if ($trimmed === '') {
-            return 'config';
+        if ($configDir === '') {
+            return 'pipeline-config';
         }
-        return $trimmed;
+        $normalized = trim(Path::normalize($configDir), '/');
+        return $normalized !== '' ? $normalized : 'pipeline-config';
     }
 }

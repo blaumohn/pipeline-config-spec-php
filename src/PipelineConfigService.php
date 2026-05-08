@@ -4,15 +4,16 @@ namespace PipelineConfigSpec;
 
 use PipelineConfigSpec\Internal\ConfigCompiler;
 use PipelineConfigSpec\Internal\ConfigSnapshot;
+use Symfony\Component\Filesystem\Path;
 
 final class PipelineConfigService
 {
     private string $rootPath;
     private string $configDir;
 
-    public function __construct(string $rootPath, string $configDir = 'config')
+    public function __construct(string $rootPath, string $configDir = 'pipeline-config')
     {
-        $this->rootPath = rtrim($rootPath, DIRECTORY_SEPARATOR);
+        $this->rootPath = Path::normalize($rootPath);
         $this->configDir = $this->normalizeConfigDir($configDir);
     }
 
@@ -85,10 +86,10 @@ final class PipelineConfigService
 
     private function normalizeConfigDir(string $configDir): string
     {
-        $trimmed = trim($configDir, DIRECTORY_SEPARATOR);
-        if ($trimmed === '') {
-            return 'config';
+        if ($configDir === '') {
+            return 'pipeline-config';
         }
-        return $trimmed;
+        $normalized = trim(Path::normalize($configDir), '/');
+        return $normalized !== '' ? $normalized : 'pipeline-config';
     }
 }
