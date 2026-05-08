@@ -53,6 +53,18 @@ final class ConfigCompiler
         return $this->resolve($pipeline, $phase, $overrides);
     }
 
+    public function cliVarsForPhase(string $pipeline, string $phase): array
+    {
+        $keys = $this->manifest->resolvePhaseKeys($pipeline, $phase);
+        return array_values(array_filter($keys, $this->isCliVar(...)));
+    }
+
+    private function isCliVar(string $key): bool
+    {
+        $policy = $this->manifest->sourcePolicyForVariable($key);
+        return $policy === [] || in_array('cli', $policy, true);
+    }
+
     private function assertValidPipelinePhase(string $pipeline, string $phase): void
     {
         $errors = $this->manifest->pipelinePhaseErrors($pipeline, $phase);

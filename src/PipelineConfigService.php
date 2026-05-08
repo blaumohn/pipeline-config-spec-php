@@ -29,6 +29,11 @@ final class PipelineConfigService
         $compiler->validate($pipeline, $phase, $overrides);
     }
 
+    public function cliVarsForPhase(string $pipeline, string $phase): array
+    {
+        return $this->compiler()->cliVarsForPhase($pipeline, $phase);
+    }
+
     public function compile(
         string $pipeline,
         string $phase,
