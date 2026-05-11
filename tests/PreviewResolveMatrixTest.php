@@ -25,7 +25,7 @@ final class PreviewResolveMatrixTest extends TestCase
         self::assertSame('local-pass', $report['values']['SFTP_PASS'] ?? null);
         self::assertSame('22', $report['values']['SFTP_PORT'] ?? null);
         self::assertStringContainsString(
-            '/.local/pipeline-config.yaml',
+            '/.local/preview.yaml',
             $report['sources']['SFTP_HOST'] ?? ''
         );
         self::assertSame('default', $report['sources']['SFTP_PORT'] ?? null);
@@ -157,7 +157,7 @@ final class PreviewResolveMatrixTest extends TestCase
                 'SFTP_PASS' => 'local-pass',
             ],
         ];
-        $this->writeYaml($root, Path::join('.local', 'pipeline-config.yaml'), Yaml::dump($payload, 8, 2));
+        $this->writeYaml($root, Path::join('.local', 'preview.yaml'), Yaml::dump($payload, 8, 2));
     }
 
     private function writeYaml(string $root, string $file, string $content): void

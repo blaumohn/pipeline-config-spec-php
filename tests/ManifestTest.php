@@ -59,6 +59,23 @@ final class ManifestTest extends TestCase
         self::assertSame(['Unbekannte Phase: setvp'], $manifest->pipelinePhaseErrors('dev', 'setvp'));
     }
 
+    public function testCommonPhaseIsValidWithoutExplicitPipelineListing(): void
+    {
+        $manifest = $this->manifest([
+            'variable-groups' => [
+                'app' => ['APP_URL' => []],
+            ],
+            'phases' => [
+                'setup' => [],
+            ],
+            'pipelines' => [
+                'dev' => [],   // kein setup-Eintrag unter pipelines.dev
+            ],
+        ]);
+
+        self::assertSame([], $manifest->pipelinePhaseErrors('dev', 'setup'));
+    }
+
     public function testReportsUnknownPipeline(): void
     {
         $manifest = $this->manifest($this->manifestData());

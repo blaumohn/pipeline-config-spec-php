@@ -55,7 +55,7 @@ final class ConfigLoader
     {
         return [
             Path::join($this->configDir, $pipeline . '.yaml'),
-            Path::join('.local', 'pipeline-config.yaml'),
+            Path::join('.local', $pipeline . '.yaml'),
         ];
     }
 

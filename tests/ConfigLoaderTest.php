@@ -69,7 +69,7 @@ final class ConfigLoaderTest extends TestCase
     private function seedYamlFiles(string $root): void
     {
         $this->writeYaml($root, Path::join('pipeline-config', 'dev.yaml'), "app:\n  APP_ENV: first\n  APP_URL: https://example.test\n");
-        $this->writeYaml($root, Path::join('.local', 'pipeline-config.yaml'), "app:\n  APP_ENV: second\n  LOCAL: local\n");
+        $this->writeYaml($root, Path::join('.local', 'dev.yaml'), "app:\n  APP_ENV: second\n  LOCAL: local\n");
     }
 
     private function writeYaml(string $root, string $file, string $content): void
