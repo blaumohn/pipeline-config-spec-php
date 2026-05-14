@@ -7,67 +7,40 @@ namespace PipelineConfigSpec\Internal;
  */
 final class ConfigPolicy
 {
-    public function validate(
-        Manifest $manifest,
-        string $pipeline,
-        string $phase,
-        ConfigSnapshot $snapshot
-    ): array {
-        $pipelinePhaseErrors = $manifest->pipelinePhaseErrors($pipeline, $phase);
-        if ($pipelinePhaseErrors !== []) {
-            return $pipelinePhaseErrors;
-        }
-
-        $keys = $manifest->resolvePhaseKeys($pipeline, $phase);
-
-        return array_merge(
-            $manifest->checkDisjoint($pipeline, $phase),
-            $this->validateRequiredPresence($keys, $snapshot),
-            $this->validateUnexpected($keys, $snapshot),
-            $this->validateSources($manifest, $snapshot)
-        );
-    }
-
-    private function validateRequiredPresence(array $keys, ConfigSnapshot $snapshot): array
+    public function validateSnapshot(ManifestPipeline $pipeline, ConfigSnapshot $snapshot): array
     {
         $errors = [];
-        foreach ($keys as $key) {
-            if (!array_key_exists($key, $snapshot->values())) {
-                $errors[] = "Missing required key: {$key}";
+        $pipelineVars = array_flip($pipeline->vars());
+
+        foreach ($pipeline->vars() as $var) {
+            if (!array_key_exists($var, $snapshot->values())) {
+                $errors[] = "Fehlende Pflicht-Variable: {$var}";
+                continue;
             }
-        }
-        return $errors;
-    }
-
-    private function validateUnexpected(array $keys, ConfigSnapshot $snapshot): array
-    {
-        $expectedKeys = array_flip($keys);
-        $errors = [];
-        foreach ($snapshot->values() as $key => $_value) {
-            if (!isset($expectedKeys[$key])) {
-                $errors[] = "Unexpected key: {$key}";
+            if ($snapshot->values()[$var] === '') {
+                $errors[] = "Leerer Wert nicht erlaubt: {$var}";
             }
-        }
-        return $errors;
-    }
-
-    private function validateSources(Manifest $manifest, ConfigSnapshot $snapshot): array
-    {
-        $errors = [];
-        $sources = $snapshot->sources();
-        foreach ($snapshot->values() as $variable => $_value) {
-            $sourcePolicy = $manifest->sourcePolicyForVariable($variable);
+            $sourcePolicy = $pipeline->sourcePolicyFor($var);
             if ($sourcePolicy === []) {
                 continue;
             }
-            $source = (string) ($sources[$variable] ?? '');
+            $source = (string) ($snapshot->sources()[$var] ?? '');
             $sourceType = $this->sourceType($source);
-            if (in_array($sourceType, $sourcePolicy, true)) {
+            if ($sourceType === 'default') {
                 continue;
             }
-            $policyLabel = implode(', ', $sourcePolicy);
-            $errors[] = "Variable in falscher Quelle: {$variable} ({$source}, erlaubt: {$policyLabel})";
+            if (!in_array($sourceType, $sourcePolicy, true)) {
+                $policyLabel = implode(', ', $sourcePolicy);
+                $errors[] = "Variable in falscher Quelle: {$var} ({$source}, erlaubt: {$policyLabel})";
+            }
         }
+
+        foreach (array_keys($snapshot->values()) as $var) {
+            if (!isset($pipelineVars[$var])) {
+                $errors[] = "Überflüssige Variable: {$var}";
+            }
+        }
+
         return $errors;
     }
 
@@ -75,6 +48,9 @@ final class ConfigPolicy
     {
         if ($source === 'cli') {
             return 'cli';
+        }
+        if ($source === 'default') {
+            return 'default';
         }
         if ($this->isLocalPath($source)) {
             return 'local';

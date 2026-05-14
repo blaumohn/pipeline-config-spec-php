@@ -141,6 +141,7 @@ final class ConfigCompilerTest extends TestCase
     {
         $root = $this->createRoot();
         $this->writeManifest($root, $this->manifestData());
+        $this->seedYamlFiles($root);
 
         $compiler = new ConfigCompiler($root);
         $path = $compiler->compile('dev', 'setup', Path::join($root, 'out', 'config.php'));
@@ -149,6 +150,52 @@ final class ConfigCompilerTest extends TestCase
         self::assertSame([], $compiled['values'] ?? []);
         self::assertSame('dev', $compiled['pipeline_phase']['pipeline'] ?? null);
         self::assertSame('setup', $compiled['pipeline_phase']['phase'] ?? null);
+    }
+
+    public function testUnknownGroupFails(): void
+    {
+        $this->expectException(\RuntimeException::class);
+        $this->expectExceptionMessageMatches('/Unbekannte Variablengruppe:/');
+
+        $root = $this->createRoot();
+        $this->writeManifest($root, $this->manifestData());
+        $this->writeYaml($root, Path::join('pipeline-config', 'dev.yaml'), Yaml::dump([
+            'app' => ['APP_URL' => 'https://example.test'],
+            'ghost' => ['GHOST_VAR' => 'x'],
+        ]));
+
+        $compiler = new ConfigCompiler($root);
+        $compiler->resolve('dev', 'runtime');
+    }
+
+    public function testTypoInKeyFails(): void
+    {
+        $this->expectException(\RuntimeException::class);
+        $this->expectExceptionMessageMatches('/Überflüssige Variable:/');
+
+        $root = $this->createRoot();
+        $this->writeManifest($root, $this->manifestData());
+        $this->writeYaml($root, Path::join('pipeline-config', 'dev.yaml'), Yaml::dump([
+            'app' => ['APP_ULR' => 'https://example.test'],
+        ]));
+
+        $compiler = new ConfigCompiler($root);
+        $compiler->resolve('dev', 'runtime');
+    }
+
+    public function testEmptyValueFails(): void
+    {
+        $this->expectException(\RuntimeException::class);
+        $this->expectExceptionMessageMatches('/Leerer Wert nicht erlaubt:/');
+
+        $root = $this->createRoot();
+        $this->writeManifest($root, $this->manifestData());
+        $this->writeYaml($root, Path::join('pipeline-config', 'dev.yaml'), Yaml::dump([
+            'app' => ['APP_URL' => ''],
+        ]));
+
+        $compiler = new ConfigCompiler($root);
+        $compiler->resolve('dev', 'runtime');
     }
 
     private function createRoot(): string
@@ -198,6 +245,7 @@ final class ConfigCompilerTest extends TestCase
     {
         $this->writeYaml($root, Path::join('pipeline-config', 'dev.yaml'), Yaml::dump([
             'app' => ['APP_URL' => 'https://example.test'],
+            'sftp' => ['SFTP_HOST' => 'sftp.example.test'],
         ]));
     }
 

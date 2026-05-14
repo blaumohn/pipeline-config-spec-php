@@ -2,6 +2,9 @@
 
 namespace PipelineConfigSpec\Internal;
 
+use Opis\JsonSchema\Errors\ErrorFormatter;
+use Opis\JsonSchema\SchemaLoader;
+use Opis\JsonSchema\Validator;
 use Symfony\Component\Filesystem\Path;
 use Symfony\Component\Yaml\Yaml;
 
@@ -28,6 +31,7 @@ final class Manifest
             throw new \RuntimeException("config.manifest.yaml ungueltig: {$path}");
         }
         $this->data = $data;
+        $this->validateStructure();
     }
 
     public function data(): array
@@ -35,12 +39,31 @@ final class Manifest
         return $this->data;
     }
 
-    public function resolvePhaseKeys(string $pipeline, string $phase): array
+    public function resolvePhaseVars(string $pipeline, string $phase): array
     {
-        $commonKeys = $this->expandPhaseRules($this->commonPhaseRules($phase));
-        $specificKeys = $this->expandPhaseRules($this->pipelinePhaseRules($pipeline, $phase));
-        $merged = array_merge($commonKeys, $specificKeys);
-        return array_values(array_unique($merged));
+        $commonVars = $this->expandPhaseRules($this->commonPhaseRules($phase));
+        $specificVars = $this->expandPhaseRules($this->pipelinePhaseRules($pipeline, $phase));
+        return array_values(array_unique(array_merge($commonVars, $specificVars)));
+    }
+
+    public function phaseNames(): array
+    {
+        return array_keys($this->phaseRules());
+    }
+
+    public function pipeline(string $pipeline): ManifestPipeline
+    {
+        $phaseVarMap = [];
+        foreach ($this->phaseNames() as $phase) {
+            $phaseVarMap[$phase] = $this->resolvePhaseVars($pipeline, $phase);
+        }
+        $allVars = array_reduce($phaseVarMap, fn($carry, $vars) => array_merge($carry, $vars), []);
+        return new ManifestPipeline($phaseVarMap, $this->sourcePolicyForVars($allVars));
+    }
+
+    public function isKnownPipeline(string $pipeline): bool
+    {
+        return $this->hasPipeline($pipeline);
     }
 
     public function pipelinePhaseErrors(string $pipeline, string $phase): array
@@ -62,13 +85,13 @@ final class Manifest
         if ($common === [] || $specific === []) {
             return [];
         }
-
-        $commonKeys = $this->expandPhaseRules($common);
-        $specificKeys = $this->expandPhaseRules($specific);
-        $overlap = array_intersect($commonKeys, $specificKeys);
+        $overlap = array_intersect(
+            $this->expandPhaseRules($common),
+            $this->expandPhaseRules($specific)
+        );
         $errors = [];
-        foreach (array_values($overlap) as $key) {
-            $errors[] = "Disjunktheitsverletzung: {$key} in common.{$phase} und {$pipeline}.{$phase}";
+        foreach (array_values($overlap) as $var) {
+            $errors[] = "Disjunktheitsverletzung: {$var} in common.{$phase} und {$pipeline}.{$phase}";
         }
         return $errors;
     }
@@ -78,7 +101,6 @@ final class Manifest
         if ($this->defaultValuesCache !== null) {
             return $this->defaultValuesCache;
         }
-
         $defaults = [];
         foreach ($this->variableGroupsData() as $variables) {
             if (!is_array($variables)) {
@@ -91,7 +113,6 @@ final class Manifest
                 }
             }
         }
-
         $this->defaultValuesCache = $defaults;
         return $defaults;
     }
@@ -103,13 +124,82 @@ final class Manifest
         return is_array($value) ? $value : [];
     }
 
-    public function variableKeys(): array
+    public function variableNames(): array
     {
-        $keys = [];
-        foreach ($this->variableGroups() as $groupKeys) {
-            $keys = array_merge($keys, $groupKeys);
+        $names = [];
+        foreach ($this->variableGroups() as $groupVars) {
+            $names = array_merge($names, $groupVars);
         }
-        return array_values(array_unique($keys));
+        return array_values(array_unique($names));
+    }
+
+    public function variableGroupNames(): array
+    {
+        return array_keys($this->variableGroupsData());
+    }
+
+    private function validateStructure(): void
+    {
+        $loader = new SchemaLoader();
+        $schema = $loader->loadObjectSchema(
+            json_decode((string) file_get_contents(__DIR__ . '/manifest.schema.json'))
+        );
+        $result = (new Validator($loader))->schemaValidation($this->toJsonValue($this->data), $schema);
+        if ($result !== null) {
+            $errors = (new ErrorFormatter())->format($result);
+            throw new \RuntimeException(
+                "manifest.yaml ungueltig:\n- " . implode("\n- ", $this->flattenErrors($errors))
+            );
+        }
+        $this->assertNoPipelineNamedCommon();
+    }
+
+    private function toJsonValue(mixed $value): mixed
+    {
+        if (!is_array($value)) {
+            return $value;
+        }
+        if ($value === [] || !array_is_list($value)) {
+            $obj = new \stdClass();
+            foreach ($value as $k => $v) {
+                $obj->{(string) $k} = $this->toJsonValue($v);
+            }
+            return $obj;
+        }
+        return array_map($this->toJsonValue(...), $value);
+    }
+
+    private function assertNoPipelineNamedCommon(): void
+    {
+        if (array_key_exists('common', $this->data['pipelines'] ?? [])) {
+            throw new \RuntimeException('common ist keine Pipeline im Manifest.');
+        }
+    }
+
+    private function flattenErrors(array $errors, string $prefix = ''): array
+    {
+        $messages = [];
+        foreach ($errors as $key => $value) {
+            $path = $prefix === '' ? (string) $key : $prefix . '.' . $key;
+            if (!is_array($value)) {
+                $messages[] = $path . ': ' . $value;
+                continue;
+            }
+            $messages = array_merge($messages, $this->flattenErrors($value, $path));
+        }
+        return $messages;
+    }
+
+    private function sourcePolicyForVars(array $vars): array
+    {
+        $policy = [];
+        foreach (array_unique($vars) as $var) {
+            $varPolicy = $this->sourcePolicyForVariable($var);
+            if ($varPolicy !== []) {
+                $policy[$var] = $varPolicy;
+            }
+        }
+        return $policy;
     }
 
     private function pipelines(): array
@@ -151,8 +241,7 @@ final class Manifest
 
     private function pipelinePhaseRules(string $pipeline, string $phase): array
     {
-        $pipelines = $this->pipelines();
-        $pipelineRules = $pipelines[$pipeline] ?? [];
+        $pipelineRules = $this->pipelines()[$pipeline] ?? [];
         if (!is_array($pipelineRules)) {
             return [];
         }
@@ -165,38 +254,36 @@ final class Manifest
         $groups = $this->variableGroups();
         $expanded = [];
         foreach ($rules as $groupKey => $selector) {
-            $keys = $this->expandRule((string) $groupKey, $selector, $groups);
-            $expanded = array_merge($expanded, $keys);
+            $expanded = array_merge($expanded, $this->expandRule((string) $groupKey, $selector, $groups));
         }
         return array_values(array_unique($expanded));
     }
 
     private function expandRule(string $groupKey, mixed $selector, array $groups): array
     {
-        $knownKeys = $groups[$groupKey] ?? null;
-        if ($knownKeys === null) {
+        $knownVars = $groups[$groupKey] ?? null;
+        if ($knownVars === null) {
             throw new \RuntimeException("Unbekannter group-key: {$groupKey}");
         }
-
         if ($selector === '*') {
-            return $knownKeys;
+            return $knownVars;
         }
         if (!is_array($selector)) {
             throw new \RuntimeException("Variablenliste fehlt fuer group-key: {$groupKey}");
         }
-        return $this->expandVariables($groupKey, $selector, $knownKeys);
+        return $this->expandVariables($groupKey, $selector, $knownVars);
     }
 
-    private function expandVariables(string $groupKey, array $variables, array $knownKeys): array
+    private function expandVariables(string $groupKey, array $variables, array $knownVars): array
     {
-        $known = array_flip($knownKeys);
+        $known = array_flip($knownVars);
         $expanded = [];
         foreach ($variables as $entry) {
-            $key = $this->requireString($entry, "Variablen-key fehlt in group-key: {$groupKey}");
-            if (!isset($known[$key])) {
-                throw new \RuntimeException("Unbekannter Variablen-key {$key} in group-key: {$groupKey}");
+            $var = $this->requireString($entry, "Variablen-key fehlt in group-key: {$groupKey}");
+            if (!isset($known[$var])) {
+                throw new \RuntimeException("Unbekannter Variablen-key {$var} in group-key: {$groupKey}");
             }
-            $expanded[] = $key;
+            $expanded[] = $var;
         }
         return array_values(array_unique($expanded));
     }
@@ -206,29 +293,25 @@ final class Manifest
         if ($this->groupKeys !== null) {
             return $this->groupKeys;
         }
-
         $groups = [];
         foreach ($this->variableGroupsData() as $groupKey => $variables) {
             $groupKey = $this->requireString($groupKey, 'Gruppen-key fehlt');
-            $groups[$groupKey] = $this->collectVariableKeys($variables);
+            $groups[$groupKey] = $this->collectVariableNames($variables);
         }
-
         $this->groupKeys = $groups;
         return $groups;
     }
 
-    private function collectVariableKeys(mixed $variables): array
+    private function collectVariableNames(mixed $variables): array
     {
         if (!is_array($variables)) {
             return [];
         }
-
-        $keys = [];
+        $names = [];
         foreach ($variables as $key => $_entry) {
-            $key = $this->requireString($key, 'Variablen-key fehlt');
-            $keys[] = $key;
+            $names[] = $this->requireString($key, 'Variablen-key fehlt');
         }
-        return array_values(array_unique($keys));
+        return array_values(array_unique($names));
     }
 
     private function variableSourcePolicy(): array
@@ -236,7 +319,6 @@ final class Manifest
         if ($this->variableSourcePolicy !== null) {
             return $this->variableSourcePolicy;
         }
-
         $sources = [];
         foreach ($this->variableGroupsData() as $variables) {
             if (!is_array($variables)) {
@@ -253,7 +335,6 @@ final class Manifest
                 }
             }
         }
-
         $this->variableSourcePolicy = $sources;
         return $sources;
     }
@@ -263,7 +344,6 @@ final class Manifest
         if ($this->phaseRules !== null) {
             return $this->phaseRules;
         }
-
         $rules = [];
         foreach ($this->phasesData() as $key => $phase) {
             $key = $this->requireString($key, 'Phasen-key fehlt');
@@ -275,7 +355,6 @@ final class Manifest
             }
             $rules[$key] = $phase;
         }
-
         $this->phaseRules = $rules;
         return $rules;
     }

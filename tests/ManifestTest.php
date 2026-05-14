@@ -14,7 +14,7 @@ final class ManifestTest extends TestCase
     public function testExpandsSelectAllGroup(): void
     {
         $manifest = $this->manifest($this->manifestData());
-        $keys = $manifest->resolvePhaseKeys('dev', 'build');
+        $keys = $manifest->resolvePhaseVars('dev', 'build');
 
         self::assertContains('APP_URL', $keys);
         self::assertContains('APP_ENV', $keys);
@@ -39,7 +39,7 @@ final class ManifestTest extends TestCase
             ],
         ]);
 
-        $keys = $manifest->resolvePhaseKeys('dev', 'build');
+        $keys = $manifest->resolvePhaseVars('dev', 'build');
 
         self::assertContains('APP_URL', $keys);
         self::assertNotContains('APP_ENV', $keys);
@@ -49,7 +49,7 @@ final class ManifestTest extends TestCase
     {
         $manifest = $this->manifest($this->manifestData());
 
-        self::assertSame([], $manifest->resolvePhaseKeys('dev', 'setup'));
+        self::assertSame([], $manifest->resolvePhaseVars('dev', 'setup'));
     }
 
     public function testReportsUnknownPhase(): void
@@ -140,7 +140,7 @@ final class ManifestTest extends TestCase
             ],
         ]);
 
-        $manifest->resolvePhaseKeys('dev', 'build');
+        $manifest->resolvePhaseVars('dev', 'build');
     }
 
     public function testDefaultValuesAreResolved(): void
@@ -187,7 +187,7 @@ final class ManifestTest extends TestCase
             ],
         ]);
 
-        $manifest->resolvePhaseKeys('dev', 'build');
+        $manifest->resolvePhaseVars('dev', 'build');
     }
 
     private function manifest(array $data): Manifest

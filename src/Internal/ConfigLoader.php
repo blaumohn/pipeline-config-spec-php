@@ -30,6 +30,27 @@ final class ConfigLoader
         return $this->snapshotFromState($state);
     }
 
+    public function rawFileGroups(string $pipeline): array
+    {
+        $result = [];
+        foreach ($this->configFiles($pipeline) as $file) {
+            if (!is_file($file)) {
+                continue;
+            }
+            $result[$file] = $this->fileTopLevelKeys($file);
+        }
+        return $result;
+    }
+
+    private function fileTopLevelKeys(string $file): array
+    {
+        $parsed = Yaml::parseFile($file);
+        if (!is_array($parsed)) {
+            return [];
+        }
+        return array_values(array_filter(array_keys($parsed), 'is_string'));
+    }
+
     public function loadOverrides(array $overrides): ConfigSnapshot
     {
         $state = $this->emptyLoadState();

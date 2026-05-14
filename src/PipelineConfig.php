@@ -6,7 +6,7 @@ use PipelineConfigSpec\Internal\ConfigCompiler;
 use PipelineConfigSpec\Internal\ConfigSnapshot;
 use Symfony\Component\Filesystem\Path;
 
-final class PipelineConfigService
+final class PipelineConfig
 {
     private string $rootPath;
     private string $configDir;
@@ -24,10 +24,9 @@ final class PipelineConfigService
         return $values;
     }
 
-    public function validate(string $pipeline, string $phase, array $overrides = []): void
+    public function validate(string $pipeline, array $overrides = []): void
     {
-        $compiler = $this->compiler();
-        $compiler->validate($pipeline, $phase, $overrides);
+        $this->compiler()->validate($pipeline, $overrides);
     }
 
     public function cliVarsForPhase(string $pipeline, string $phase): array

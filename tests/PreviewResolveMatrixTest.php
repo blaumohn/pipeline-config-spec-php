@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace PipelineConfigSpec\Tests;
 
-use PipelineConfigSpec\PipelineConfigService;
+use PipelineConfigSpec\PipelineConfig;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\Filesystem\Path;
 use Symfony\Component\Yaml\Yaml;
@@ -16,7 +16,7 @@ final class PreviewResolveMatrixTest extends TestCase
         $root = $this->createRoot();
         $this->writePreviewConfig($root);
         $this->writeLocalConfig($root);
-        $service = new PipelineConfigService($root);
+        $service = new PipelineConfig($root);
 
         $report = $service->describe('preview', 'deploy');
 
@@ -36,7 +36,7 @@ final class PreviewResolveMatrixTest extends TestCase
         $root = $this->createRoot();
         $this->writePreviewConfig($root);
         $this->writeLocalConfig($root);
-        $service = new PipelineConfigService($root);
+        $service = new PipelineConfig($root);
 
         $report = $service->describe('preview', 'deploy', ['SFTP_HOST' => 'override-host']);
 
@@ -47,13 +47,13 @@ final class PreviewResolveMatrixTest extends TestCase
     public function testPreviewDeployFailsWhenCredentialIsMissing(): void
     {
         $this->expectException(\RuntimeException::class);
-        $this->expectExceptionMessage('Missing required key: SFTP_HOST');
+        $this->expectExceptionMessage('Fehlende Pflicht-Variable: SFTP_HOST');
 
         $root = $this->createRoot();
         $this->writePreviewConfig($root, includeCredentials: false);
-        $service = new PipelineConfigService($root);
+        $service = new PipelineConfig($root);
 
-        $service->values('preview', 'deploy');
+        $service->values('preview', 'deploy', ['SMTP_PASS' => 'cli-secret']);
     }
 
     public function testPreviewDeployRejectsCliOverrideWhenManifestForbidsIt(): void
@@ -64,7 +64,7 @@ final class PreviewResolveMatrixTest extends TestCase
         $root = $this->createRoot();
         $this->writePreviewConfig($root, allowCliCredentials: false);
         $this->writeLocalConfig($root);
-        $service = new PipelineConfigService($root);
+        $service = new PipelineConfig($root);
 
         $service->values('preview', 'deploy', ['SFTP_HOST' => 'override-host']);
     }
@@ -72,8 +72,9 @@ final class PreviewResolveMatrixTest extends TestCase
     public function testPreviewRuntimeCompileUsesCliSecretAndKeepsPhase(): void
     {
         $root = $this->createRoot();
-        $this->writePreviewConfig($root);
-        $service = new PipelineConfigService($root);
+        $this->writePreviewConfig($root, includeCredentials: false);
+        $this->writeLocalConfig($root);
+        $service = new PipelineConfig($root);
 
         $path = $service->compile('preview', 'runtime', Path::join($root, 'out', 'runtime.php'), [
             'SMTP_PASS' => 'runtime-pass',
@@ -151,6 +152,9 @@ final class PreviewResolveMatrixTest extends TestCase
     private function writeLocalConfig(string $root): void
     {
         $payload = [
+            'smtp' => [
+                'SMTP_PASS' => 'local-smtp-pass',
+            ],
             'sftp' => [
                 'SFTP_HOST' => 'local-host',
                 'SFTP_USER' => 'local-user',
