@@ -71,7 +71,7 @@ final class ConfigCompilerTest extends TestCase
         $this->writeManifest($root, $this->manifestData());
 
         $compiler = new ConfigCompiler($root);
-        $compiler->compile('deev', 'runtime', Path::join($root, 'out', 'config.php'));
+        $compiler->compile('deev', 'runtime', Path::join($root, 'out', 'config.json'));
     }
 
     public function testCompileThrowsOnUnknownPhase(): void
@@ -83,7 +83,7 @@ final class ConfigCompilerTest extends TestCase
         $this->writeManifest($root, $this->manifestData());
 
         $compiler = new ConfigCompiler($root);
-        $compiler->compile('dev', 'setvp', Path::join($root, 'out', 'config.php'));
+        $compiler->compile('dev', 'setvp', Path::join($root, 'out', 'config.json'));
     }
 
     public function testCompileReadsCliOverrideWhenSourceAllowsIt(): void
@@ -102,7 +102,7 @@ final class ConfigCompilerTest extends TestCase
         ]);
 
         $compiler = new ConfigCompiler($root);
-        $path = $compiler->compile('dev', 'runtime', Path::join($root, 'out', 'config.php'), [
+        $path = $compiler->compile('dev', 'runtime', Path::join($root, 'out', 'config.json'), [
             'IP_SALT' => 'test-salt',
         ]);
         $compiled = $this->readConfig($path);
@@ -132,7 +132,7 @@ final class ConfigCompilerTest extends TestCase
         ]));
 
         $compiler = new ConfigCompiler($root);
-        $compiler->compile('dev', 'runtime', Path::join($root, 'out', 'config.php'), [
+        $compiler->compile('dev', 'runtime', Path::join($root, 'out', 'config.json'), [
             'SECRET' => 'cli-secret',
         ]);
     }
@@ -144,7 +144,7 @@ final class ConfigCompilerTest extends TestCase
         $this->seedYamlFiles($root);
 
         $compiler = new ConfigCompiler($root);
-        $path = $compiler->compile('dev', 'setup', Path::join($root, 'out', 'config.php'));
+        $path = $compiler->compile('dev', 'setup', Path::join($root, 'out', 'config.json'));
         $compiled = $this->readConfig($path);
 
         self::assertSame([], $compiled['values'] ?? []);
@@ -252,13 +252,13 @@ final class ConfigCompilerTest extends TestCase
     private function compilePayload(string $root): array
     {
         $compiler = new ConfigCompiler($root);
-        $path = $compiler->compile('dev', 'runtime', Path::join($root, 'out', 'config.php'));
+        $path = $compiler->compile('dev', 'runtime', Path::join($root, 'out', 'config.json'));
         return $this->readConfig($path);
     }
 
     private function readConfig(string $path): array
     {
-        $values = require $path;
+        $values = json_decode((string) file_get_contents($path), true, flags: JSON_THROW_ON_ERROR);
         return is_array($values) ? $values : [];
     }
 }
