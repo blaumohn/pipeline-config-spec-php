@@ -76,10 +76,10 @@ final class PreviewResolveMatrixTest extends TestCase
         $this->writeLocalConfig($root);
         $service = new PipelineConfig($root);
 
-        $path = $service->compile('preview', 'runtime', Path::join($root, 'out', 'runtime.php'), [
+        $path = $service->compile('preview', 'runtime', Path::join($root, 'out', 'runtime.json'), [
             'SMTP_PASS' => 'runtime-pass',
         ]);
-        $compiled = require $path;
+        $compiled = json_decode((string) file_get_contents($path), true, flags: JSON_THROW_ON_ERROR);
 
         self::assertSame('preview', $compiled['pipeline_phase']['pipeline'] ?? null);
         self::assertSame('runtime', $compiled['pipeline_phase']['phase'] ?? null);

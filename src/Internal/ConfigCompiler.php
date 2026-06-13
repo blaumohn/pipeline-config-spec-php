@@ -195,7 +195,7 @@ final class ConfigCompiler
         if ($targetPath !== null) {
             return $targetPath;
         }
-        return Path::join($this->rootPath, 'var', 'config', 'config.php');
+        return Path::join($this->rootPath, 'var', 'config', 'config.json');
     }
 
     private function writeCompiled(string $path, array $payload): void
@@ -204,7 +204,7 @@ final class ConfigCompiler
         if (!is_dir($dir)) {
             mkdir($dir, 0775, true);
         }
-        $content = "<?php\n\nreturn " . var_export($payload, true) . ";\n";
+        $content = json_encode($payload, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR) . "\n";
         file_put_contents($path, $content);
     }
 
